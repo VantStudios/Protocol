@@ -1,0 +1,16 @@
+.{
+    .name = .protocol,
+    .version = "0.0.0",
+    .fingerprint = 0xc8c0bc4c5e706fd7,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .BinaryStream = .{
+            .path = "libs/BinaryStream",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+        "src",
+    },
+}
