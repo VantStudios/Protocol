@@ -22,7 +22,7 @@ pub const InteractPacket = struct {
     pub fn deserialize(stream: *BinaryStream) !InteractPacket {
         _ = try stream.readVarInt();
         const action_raw = try stream.readUint8();
-        const action: InteractAction = std.meta.intToEnum(InteractAction, action_raw) catch return error.UnknownInteractAction;
+        const action: InteractAction = std.enums.fromInt(InteractAction, action_raw) catch return error.UnknownInteractAction;
         const actor_runtime_id: u64 = @intCast(try stream.readVarLong());
         var position: ?Vector3f = null;
         if (action == .InteractUpdate) {

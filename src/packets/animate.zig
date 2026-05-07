@@ -32,7 +32,7 @@ pub const AnimatePacket = struct {
     pub fn deserialize(stream: *BinaryStream) !AnimatePacket {
         _ = try stream.readVarInt();
         const action_raw = try stream.readUint8();
-        const action: AnimateAction = std.meta.intToEnum(AnimateAction, action_raw) catch return error.UnknownAnimateAction;
+        const action: AnimateAction = std.enums.fromInt(AnimateAction, action_raw) catch return error.UnknownAnimateAction;
         const runtime_entity_id: u64 = @intCast(try stream.readVarLong());
         const data = try stream.readFloat32(.Little);
         var swing_source: []const u8 = "";
