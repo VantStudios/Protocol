@@ -1,4 +1,5 @@
 const BinaryStream = @import("BinaryStream").BinaryStream;
+const std = @import("std");
 const MoveDeltaFlags = @import("../types/move-delta-flags.zig").MoveDeltaFlags;
 
 pub const MoveActorDeltaPacket = struct {
@@ -25,7 +26,8 @@ pub const MoveActorDeltaPacket = struct {
     }
 
     fn writeByteFloat(stream: *BinaryStream, value: f32) !void {
-        try stream.writeUint8(@intFromFloat(@mod(value, 360.0) / (360.0 / 256.0)));
+        const safe = if (!std.math.isFinite(value)) value else 0.0;
+        try stream.writeUint8(@intFromFloat(@mod(safe, 360.0) / (360.0 / 256.0)));
     }
 
     fn readByteFloat(stream: *BinaryStream) !f32 {

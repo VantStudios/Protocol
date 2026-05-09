@@ -37,7 +37,7 @@ pub const MobEquipmentPacket = struct {
             .item = item,
             .slot = slot,
             .selected_slot = selected_slot,
-            .container_id = std.enums.fromInt(ContainerId, container_id_raw) catch .None,
+            .container_id = std.enums.fromInt(ContainerId, container_id_raw) orelse .None,
         };
     }
 };

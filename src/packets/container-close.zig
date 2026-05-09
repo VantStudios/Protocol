@@ -23,8 +23,8 @@ pub const ContainerClosePacket = struct {
         const container_type_raw = try stream.readInt8();
         const server_initiated = try stream.readBool();
         return .{
-            .identifier = std.enums.fromInt(ContainerId, identifier_raw) catch return error.UnknownContainerId,
-            .container_type = std.enums.fromInt(ContainerType, container_type_raw) catch return error.UnknownContainerType,
+            .identifier = std.enums.fromInt(ContainerId, identifier_raw) orelse return error.UnknownContainerId,
+            .container_type = std.enums.fromInt(ContainerType, container_type_raw) orelse return error.UnknownContainerType,
             .server_initiated = server_initiated,
         };
     }

@@ -27,8 +27,8 @@ pub const ContainerOpenPacket = struct {
         const position = try BlockPosition.read(stream);
         const unique_id = try stream.readZigZong();
         return .{
-            .identifier = std.enums.fromInt(ContainerId, identifier_raw) catch return error.UnknownContainerId,
-            .container_type = std.enums.fromInt(ContainerType, container_type_raw) catch return error.UnknownContainerType,
+            .identifier = std.enums.fromInt(ContainerId, identifier_raw) orelse return error.UnknownContainerId,
+            .container_type = std.enums.fromInt(ContainerType, container_type_raw) orelse return error.UnknownContainerType,
             .position = position,
             .unique_id = unique_id,
         };
