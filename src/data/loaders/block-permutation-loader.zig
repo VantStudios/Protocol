@@ -16,7 +16,7 @@ pub const BlockPermutationLoader = struct {
         return .{
             .allocator = allocator,
             .arena = std.heap.ArenaAllocator.init(allocator),
-            .permutations = .{},
+            .permutations = .empty,
         };
     }
 
