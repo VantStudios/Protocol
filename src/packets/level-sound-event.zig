@@ -28,6 +28,7 @@ pub const LevelSoundEventPacket = struct {
     isBabyMob: bool,
     isGlobal: bool,
     uniqueActorId: i64 = -1,
+    fire_at_position: ?Vector3f = null,
 
     pub fn serialize(self: *const LevelSoundEventPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.LevelSoundEvent);
@@ -38,6 +39,12 @@ pub const LevelSoundEventPacket = struct {
         try stream.writeBool(self.isBabyMob);
         try stream.writeBool(self.isGlobal);
         try stream.writeInt64(self.uniqueActorId, .Little);
+        if (self.fire_at_position) |fire_at_position| {
+            try stream.writeBool(true);
+            try Vector3f.write(stream, fire_at_position);
+        } else {
+            try stream.writeBool(false);
+        }
         return stream.getBuffer();
     }
 };

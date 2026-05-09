@@ -15,7 +15,7 @@ pub const NetworkItemStackDescriptor = struct {
     }
 
     pub fn skip(stream: *BinaryStream) !void {
-        const network = try stream.readZigZag();
+        const network = try stream.readShort(.Little);
         if (network == 0) return;
         _ = try stream.readUint16(.Little);
         _ = try stream.readVarInt();
@@ -26,7 +26,7 @@ pub const NetworkItemStackDescriptor = struct {
     }
 
     pub fn read(stream: *BinaryStream, allocator: std.mem.Allocator) !NetworkItemStackDescriptor {
-        const network = try stream.readZigZag();
+        const network = try stream.readShort(.Little);
         if (network == 0) return .{
             .network = network,
             .stackSize = null,

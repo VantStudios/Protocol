@@ -70,4 +70,16 @@ pub const Vector3f = struct {
             .z = self.z * scalar,
         };
     }
+
+    pub fn eql(self: Vector3f, vec: Vector3f) bool {
+        return std.meta.eql(self, vec);
+    }
+
+    pub fn zero() Vector3f {
+        return .{
+            .x = 0.0,
+            .y = 0.0,
+            .z = 0.0,
+        };
+    }
 };

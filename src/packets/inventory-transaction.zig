@@ -37,7 +37,7 @@ pub const InventoryTransactionPacket = struct {
         }
 
         const transactionTypeRaw = try stream.readVarInt();
-        const transactionType: TransactionType = std.enums.fromInt(TransactionType, transactionTypeRaw) orelse return error.InvalidTransactionType;
+        const transactionType: TransactionType = std.meta.intToEnum(TransactionType, transactionTypeRaw) catch return error.InvalidTransactionType;
 
         const actionCount = try stream.readVarInt();
         var normal_data = NormalTransactionData{};

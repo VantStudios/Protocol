@@ -16,8 +16,21 @@ pub const InventorySlotPacket = struct {
         try stream.writeVarInt(Packet.InventorySlot);
         try stream.writeVarInt(@as(u32, @bitCast(@as(i32, @intFromEnum(self.containerId)))));
         try stream.writeVarInt(self.slot);
-        try FullContainerName.write(stream, self.fullContainerName);
-        try NetworkItemStackDescriptor.write(stream, self.storageItem, stream.allocator);
+
+        if (!self.fullContainerName.isLegacy()) {
+            try stream.writeBool(true);
+            try FullContainerName.write(stream, self.fullContainerName);
+        } else {
+            try stream.writeBool(false);
+        }
+
+        if (self.storageItem.network != 0) {
+            try stream.writeBool(true);
+            try NetworkItemStackDescriptor.write(stream, self.storageItem, stream.allocator);
+        } else {
+            try stream.writeBool(false);
+        }
+
         try NetworkItemStackDescriptor.write(stream, self.item, stream.allocator);
         return stream.getBuffer();
     }
@@ -26,8 +39,17 @@ pub const InventorySlotPacket = struct {
         _ = try stream.readVarInt();
         const containerId: ContainerId = @enumFromInt(@as(i8, @truncate(@as(i32, @bitCast(try stream.readVarInt())))));
         const slot = try stream.readVarInt();
-        const fullContainerName = try FullContainerName.read(stream);
-        const storageItem = try NetworkItemStackDescriptor.read(stream, stream.allocator);
+
+        const fullContainerName = if (try stream.readBool())
+            try FullContainerName.read(stream)
+        else
+            FullContainerName.legacy();
+
+        const storageItem = if (try stream.readBool())
+            try NetworkItemStackDescriptor.read(stream, stream.allocator)
+        else
+            NetworkItemStackDescriptor{ .network = 0 };
+
         const item = try NetworkItemStackDescriptor.read(stream, stream.allocator);
         return .{
             .containerId = containerId,

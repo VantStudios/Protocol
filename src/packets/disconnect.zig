@@ -11,7 +11,7 @@ pub const Disconnect = struct {
     pub fn serialize(self: *Disconnect, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.Disconnect);
         try stream.writeZigZag(@intFromEnum(self.reason));
-        try stream.writeBool(self.hideScreen);
+        try stream.writeZigZag(if (self.hideScreen) 1 else 0);
 
         if (!self.hideScreen) {
             try stream.writeVarString(self.message orelse "Disconnected from server.");
@@ -24,12 +24,12 @@ pub const Disconnect = struct {
     pub fn deserialize(stream: *BinaryStream) !Disconnect {
         _ = try stream.readVarInt();
         const reason: DisconnectReason = @enumFromInt(try stream.readZigZag());
-        const hideScreen = try stream.readBool();
+        const hideScreen = try stream.readZigZag();
 
         if (!hideScreen) {
             return Disconnect{
                 .reason = reason,
-                .hideScreen = hideScreen,
+                .hideScreen = hideScreen == 0,
                 .message = try stream.readVarString(),
                 .filtered = try stream.readVarString(),
             };

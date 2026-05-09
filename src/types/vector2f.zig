@@ -20,4 +20,15 @@ pub const Vector2f = struct {
         try stream.writeFloat32(value.x, .Little);
         try stream.writeFloat32(value.y, .Little);
     }
+
+    pub fn eql(self: Vector2f, vec: Vector2f) bool {
+        return std.meta.eql(self, vec);
+    }
+
+    pub fn zero() Vector2f {
+        return .{
+            .x = 0.0,
+            .z = 0.0,
+        };
+    }
 };

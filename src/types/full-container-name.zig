@@ -9,6 +9,18 @@ pub const FullContainerName = struct {
         return FullContainerName{ .identifier = identifier, .dynamicIdentifier = dynamicIdentifier };
     }
 
+    pub fn isLegacy(self: FullContainerName) bool {
+        return self.identifier == .AnvilInput and
+            (self.dynamicIdentifier == null or self.dynamicIdentifier == 0);
+    }
+
+    pub fn legacy() FullContainerName {
+        return .{
+            .identifier = .AnvilInput,
+            .dynamicIdentifier = 0,
+        };
+    }
+
     pub fn read(stream: *BinaryStream) !FullContainerName {
         const identifier: ContainerName = @enumFromInt(try stream.readUint8());
         const isDynamic = try stream.readBool();
