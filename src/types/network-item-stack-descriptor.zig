@@ -15,7 +15,8 @@ pub const NetworkItemStackDescriptor = struct {
     }
 
     pub fn skip(stream: *BinaryStream) !void {
-        const network = try stream.readShort(.Little);
+        std.debug.print("NetworkItemStackDescriptor: skip()\n", .{});
+        const network = try stream.readZigZag();
         if (network == 0) return;
         _ = try stream.readUint16(.Little);
         _ = try stream.readVarInt();
@@ -25,8 +26,20 @@ pub const NetworkItemStackDescriptor = struct {
         stream.offset += length;
     }
 
+    pub fn skipShort(stream: *BinaryStream) !void {
+        std.debug.print("NetworkItemStackDescriptor: skipShort()\n", .{});
+        _ = try stream.readShort(.Little);
+        _ = try stream.readUint16(.Little);
+        _ = try stream.readVarInt();
+        if (try stream.readBool()) _ = try stream.readZigZag();
+        _ = try stream.readZigZag();
+        const length = try stream.readVarInt();
+        stream.offset += length;
+    }
+
     pub fn read(stream: *BinaryStream, allocator: std.mem.Allocator) !NetworkItemStackDescriptor {
-        const network = try stream.readShort(.Little);
+        std.debug.print("NetworkItemStackDescriptor: read()\n", .{});
+        const network = try stream.readZigZag();
         if (network == 0) return .{
             .network = network,
             .stackSize = null,
@@ -62,6 +75,39 @@ pub const NetworkItemStackDescriptor = struct {
         };
     }
 
+    pub fn readShort(stream: *BinaryStream, allocator: std.mem.Allocator) !NetworkItemStackDescriptor {
+        const network = try stream.readShort(.Little);
+        const stackSize = try stream.readUint16(.Little);
+        const metadata = try stream.readVarInt();
+        const hasNetId = try stream.readBool();
+        var itemStackId: ?i32 = null;
+        if (hasNetId) {
+            _ = try stream.readVarInt();
+            itemStackId = try stream.readZigZag();
+        }
+        const networkBlockId = try stream.readZigZag();
+
+        const length = try stream.readVarInt();
+        const extras: ?ItemInstanceUserData = if (length > 0) blk: {
+            const start = stream.offset;
+            const result = ItemInstanceUserData.read(stream, allocator, network) catch {
+                stream.offset = start + length;
+                break :blk null;
+            };
+            stream.offset = start + length;
+            break :blk result;
+        } else null;
+
+        return .{
+            .network = network,
+            .stackSize = stackSize,
+            .metadata = metadata,
+            .itemStackId = itemStackId,
+            .networkBlockId = networkBlockId,
+            .extras = extras,
+        };
+    }
+
     pub fn write(stream: *BinaryStream, value: NetworkItemStackDescriptor, allocator: std.mem.Allocator) !void {
         try stream.writeZigZag(value.network);
         if (value.network == 0) return;
@@ -71,6 +117,42 @@ pub const NetworkItemStackDescriptor = struct {
 
         if (value.itemStackId) |id| {
             try stream.writeBool(true);
+            try stream.writeZigZag(id);
+        } else {
+            try stream.writeBool(false);
+        }
+
+        try stream.writeZigZag(value.networkBlockId orelse 0);
+
+        if (value.extras) |extras| {
+            var sub = BinaryStream.init(allocator, null, null);
+            defer sub.deinit();
+            try ItemInstanceUserData.write(&sub, extras, value.network);
+            const buf = sub.getBuffer();
+            try stream.writeVarInt(@intCast(buf.len));
+            try stream.write(buf);
+        } else {
+            try stream.writeVarInt(0);
+        }
+    }
+
+    pub fn writeShort(stream: *BinaryStream, value: NetworkItemStackDescriptor, allocator: std.mem.Allocator) !void {
+        try stream.writeShort(@intCast(value.network), .Little);
+        if (value.network == 0) {
+            try stream.writeUint16(0, .Little);
+            try stream.writeVarInt(0);
+            try stream.writeBool(false);
+            try stream.writeZigZag(0);
+            try stream.writeVarInt(0);
+            return;
+        }
+
+        try stream.writeUint16(value.stackSize orelse 0, .Little);
+        try stream.writeVarInt(value.metadata orelse 0);
+
+        if (value.itemStackId) |id| {
+            try stream.writeBool(true);
+            try stream.writeVarInt(0);
             try stream.writeZigZag(id);
         } else {
             try stream.writeBool(false);

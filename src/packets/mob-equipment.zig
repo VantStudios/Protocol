@@ -16,9 +16,10 @@ pub const MobEquipmentPacket = struct {
     }
 
     pub fn serialize(self: *const MobEquipmentPacket, stream: *BinaryStream) ![]const u8 {
+        std.debug.print("MobEquipment: serialize()\n", .{});
         try stream.writeVarInt(Packet.MobEquipment);
         try stream.writeVarLong(self.runtime_entity_id);
-        try NetworkItemStackDescriptor.write(stream, self.item, stream.allocator);
+        try NetworkItemStackDescriptor.writeShort(stream, self.item, stream.allocator);
         try stream.writeUint8(self.slot);
         try stream.writeUint8(self.selected_slot);
         try stream.writeInt8(@intFromEnum(self.container_id));
@@ -26,9 +27,11 @@ pub const MobEquipmentPacket = struct {
     }
 
     pub fn deserialize(stream: *BinaryStream) !MobEquipmentPacket {
+        std.debug.print("MobEquipment: deserialize()\n", .{});
+
         _ = try stream.readVarInt();
         const runtime_entity_id = try stream.readVarLong();
-        const item = try NetworkItemStackDescriptor.read(stream, stream.allocator);
+        const item = try NetworkItemStackDescriptor.readShort(stream, stream.allocator);
         const slot = try stream.readUint8();
         const selected_slot = try stream.readUint8();
         const container_id_raw = try stream.readInt8();
