@@ -16,7 +16,6 @@ pub const MobEquipmentPacket = struct {
     }
 
     pub fn serialize(self: *const MobEquipmentPacket, stream: *BinaryStream) ![]const u8 {
-        std.debug.print("MobEquipment: serialize()\n", .{});
         try stream.writeVarInt(Packet.MobEquipment);
         try stream.writeVarLong(self.runtime_entity_id);
         try NetworkItemStackDescriptor.writeShort(stream, self.item, stream.allocator);
@@ -27,8 +26,6 @@ pub const MobEquipmentPacket = struct {
     }
 
     pub fn deserialize(stream: *BinaryStream) !MobEquipmentPacket {
-        std.debug.print("MobEquipment: deserialize()\n", .{});
-
         _ = try stream.readVarInt();
         const runtime_entity_id = try stream.readVarLong();
         const item = try NetworkItemStackDescriptor.readShort(stream, stream.allocator);
