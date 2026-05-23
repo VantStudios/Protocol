@@ -13,7 +13,6 @@ pub const InventorySlotPacket = struct {
     item: NetworkItemStackDescriptor,
 
     pub fn serialize(self: *const InventorySlotPacket, stream: *BinaryStream) ![]const u8 {
-        std.debug.print("InventorySlot: serialize()\n", .{});
         try stream.writeVarInt(Packet.InventorySlot);
         try stream.writeVarInt(@as(u32, @bitCast(@as(i32, @intFromEnum(self.containerId)))));
         try stream.writeVarInt(self.slot);
@@ -37,7 +36,6 @@ pub const InventorySlotPacket = struct {
     }
 
     pub fn deserialize(stream: *BinaryStream) !InventorySlotPacket {
-        std.debug.print("InventorySlot: deserialize()\n", .{});
         _ = try stream.readVarInt();
         const containerId: ContainerId = @enumFromInt(@as(i8, @truncate(@as(i32, @bitCast(try stream.readVarInt())))));
         const slot = try stream.readVarInt();
