@@ -1,6 +1,41 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const Vector3f = @import("vector3f.zig").Vector3f;
+
+pub const Face = enum(u8) {
+    North,
+    South,
+    East,
+    West,
+    Up,
+    Down,
+
+    pub fn getOffset(self: Face) BlockPosition {
+        return switch (self) {
+            .North => .{ .x = 0, .y = 0, .z = -1 },
+            .South => .{ .x = 0, .y = 0, .z = 1 },
+            .East => .{ .x = 1, .y = 0, .z = 0 },
+            .West => .{ .x = -1, .y = 0, .z = 0 },
+            .Up => .{ .x = 0, .y = 1, .z = 0 },
+            .Down => .{ .x = 0, .y = -1, .z = 0 },
+        };
+    }
+
+    pub fn oposite(self: Face) Face {
+        return switch (self) {
+            .North => .South,
+            .South => .North,
+            .East => .West,
+            .West => .East,
+            .Up => .Down,
+            .Down => .Up,
+        };
+    }
+
+    pub const horizontal = [_]Face{ .North, .South, .East, .West };
+};
 
 pub const BlockPosition = struct {
     x: i32,
@@ -25,6 +60,26 @@ pub const BlockPosition = struct {
             .y = @intFromFloat(@floor(vec.y)),
             .z = @intFromFloat(@floor(vec.z)),
         };
+    }
+
+    pub fn add(self: BlockPosition, other: BlockPosition) BlockPosition {
+        return .{
+            .x = self.x + other.x,
+            .y = self.y + other.y,
+            .z = self.z + other.z,
+        };
+    }
+
+    pub fn relative(self: BlockPosition, face: Face) BlockPosition {
+        return self.add(face.getOffset());
+    }
+
+    pub fn horizontalNeighbors(self: BlockPosition) [4]BlockPosition {
+        var neighbors: [4]BlockPosition = undefined;
+        inline for (Face.horizontal, 0..) |face, i| {
+            neighbors[i] = self.relative(face);
+        }
+        return neighbors;
     }
 
     pub fn eql(self: BlockPosition, pos: BlockPosition) bool {
