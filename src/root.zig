@@ -113,6 +113,7 @@ pub const TextPacket = @import("./packets/text.zig").TextPacket;
 pub const UpdateAbilitiesPacket = @import("./packets/update-abilities.zig").UpdateAbilitiesPacket;
 pub const UpdateAttributesPacket = @import("./packets/update-attributes.zig").UpdateAttributesPacket;
 pub const UpdateBlockPacket = @import("./packets/update-block.zig").UpdateBlockPacket;
+pub const UpdateTradePacket = @import("./packets/update-trade.zig").UpdateTradePacket;
 pub const VoxelShapesPacket = @import("./packets/voxel-shapes.zig").VoxelShapesPacket;
 pub const AbilityLayer = @import("./types/ability-layer.zig").AbilityLayer;
 pub const AbilitySet = @import("./types/ability-set.zig").AbilitySet;
