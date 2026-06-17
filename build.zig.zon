@@ -4,8 +4,13 @@
     .fingerprint = 0xc8c0bc4c5e706fd7,
     .minimum_zig_version = "0.16.0",
     .dependencies = .{
+        .nbt = .{
+            .url = "git+https://github.com/VantStudios/Nbt.git#6a0c19c8869839347852b5ef0915dca513f012da",
+            .hash = "nbt-0.0.0-lsUufBrRAADisGBZm4XFayu1qBm1yBV_OQA7ffTtUwod",
+        },
         .BinaryStream = .{
-            .path = "libs/BinaryStream",
+            .url = "git+https://github.com/VantStudios/BinaryStream?ref=master#b86fa752f49db4472d1480aeb0c8cc83462d8b39",
+            .hash = "BinaryStream-0.0.0-gn8mmnJZAQAnFC-kkrSOzigRqEgMsHddZlmmGELc0jAv",
         },
     },
     .paths = .{
