@@ -1,6 +1,0 @@
-[submodule "libs/BinaryStream"]
-	path = libs/BinaryStream
-	url = https://github.com/VantStudios/BinaryStream.git
-[submodule "libs/Nbt"]
-	path = libs/Nbt
-	url = https://github.com/VantStudios/Nbt.git
