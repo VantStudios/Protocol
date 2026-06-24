@@ -141,7 +141,7 @@ fn readNormalAction(stream: *BinaryStream, data: *NormalTransactionData) !void {
     }
     const slot = try stream.readVarInt();
 
-    NetworkItemStackDescriptor.skipShort(stream);
+    try NetworkItemStackDescriptor.skipShort(stream);
 
     _ = try stream.readZigZag();
     const new_count = try stream.readUint16(.Little);
