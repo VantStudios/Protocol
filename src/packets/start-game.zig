@@ -72,6 +72,8 @@ pub const StartGamePacket = struct {
     experimentalGameplayOverride: bool,
     chatRestrictionLevel: u8,
     disablePlayerInteractions: bool,
+    server_editor_connection_policy: u32,
+    allow_anonimous_block_drops_in_editor_worlds: bool,
     levelIdentifier: []const u8,
     levelName: []const u8,
     premiumWorldTemplateId: []const u8,
@@ -90,6 +92,7 @@ pub const StartGamePacket = struct {
     clientSideGeneration: bool,
     blockNetworkIdsAreHashes: bool,
     serverControlledSounds: bool,
+    is_logging_chat: bool,
     containsServerJoinInfo: bool,
     serverTelemetryData: ServerTelemetryData,
 
@@ -154,6 +157,8 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.experimentalGameplayOverride);
         try stream.writeInt8(@bitCast(self.chatRestrictionLevel));
         try stream.writeBool(self.disablePlayerInteractions);
+        try stream.writeVarInt(self.server_editor_connection_policy);
+        try stream.writeBool(self.allow_anonimous_block_drops_in_editor_worlds);
         try stream.writeVarString(self.levelIdentifier);
         try stream.writeVarString(self.levelName);
         try stream.writeVarString(self.premiumWorldTemplateId);
@@ -174,6 +179,7 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.clientSideGeneration);
         try stream.writeBool(self.blockNetworkIdsAreHashes);
         try stream.writeBool(self.serverControlledSounds);
+        try stream.writeBool(self.is_logging_chat);
         try stream.writeBool(self.containsServerJoinInfo);
         try ServerTelemetryData.write(stream, self.serverTelemetryData);
 
@@ -241,6 +247,8 @@ pub const StartGamePacket = struct {
         const experimentalGameplayOverride = try stream.readBool();
         const chatRestrictionLevel: u8 = @bitCast(try stream.readInt8());
         const disablePlayerInteractions = try stream.readBool();
+        const server_editor_connection_policy = try stream.readVarInt();
+        const allow_anonimous_block_drops_in_editor_worlds = try stream.readBool();
         const levelIdentifier = try stream.readVarString();
         const levelName = try stream.readVarString();
         const premiumWorldTemplateId = try stream.readVarString();
@@ -261,6 +269,7 @@ pub const StartGamePacket = struct {
         const clientSideGeneration = try stream.readBool();
         const blockNetworkIdsAreHashes = try stream.readBool();
         const serverControlledSounds = try stream.readBool();
+        const is_logging_chat = try stream.readBool();
         const containsServerJoinInfo = try stream.readBool();
         const serverTelemetryData = try ServerTelemetryData.read(stream);
 
@@ -323,6 +332,8 @@ pub const StartGamePacket = struct {
             .experimentalGameplayOverride = experimentalGameplayOverride,
             .chatRestrictionLevel = chatRestrictionLevel,
             .disablePlayerInteractions = disablePlayerInteractions,
+            .server_editor_connection_policy = server_editor_connection_policy,
+            .allow_anonimous_block_drops_in_editor_worlds = allow_anonimous_block_drops_in_editor_worlds,
             .levelIdentifier = levelIdentifier,
             .levelName = levelName,
             .premiumWorldTemplateId = premiumWorldTemplateId,
@@ -341,6 +352,7 @@ pub const StartGamePacket = struct {
             .clientSideGeneration = clientSideGeneration,
             .blockNetworkIdsAreHashes = blockNetworkIdsAreHashes,
             .serverControlledSounds = serverControlledSounds,
+            .is_logging_chat = is_logging_chat,
             .containsServerJoinInfo = containsServerJoinInfo,
             .serverTelemetryData = serverTelemetryData,
         };

@@ -29,6 +29,7 @@ pub const UseItemTransactionData = struct {
     clickedPosition: Vector3f,
     blockRuntimeId: u32,
     clientPrediction: u32,
+    client_cooldown_state: u32,
 };
 
 pub const UseItemOnEntityTransactionData = struct {
