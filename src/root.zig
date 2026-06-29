@@ -1,4 +1,5 @@
-pub const PROTOCOL = 975;
+pub const PROTOCOL = 1001;
+pub const MINECRAFT_VERSION = "1.26.30";
 pub const SHIELD_NETWORK_ID = 387;
 
 pub const NBT = @import("nbt");
@@ -34,6 +35,7 @@ pub const PlayerActionType = @import("./enums/player-action-type.zig").PlayerAct
 pub const PlayerListAction = @import("./enums/player-list-action.zig").PlayerListAction;
 pub const ReleaseItemAction = @import("./enums/release-item-action.zig").ReleaseItemAction;
 pub const ResourcePackResponse = @import("./enums/resource-pack-response.zig").ResourcePackResponse;
+pub const SoundEvent = @import("./enums/sound-event.zig").SoundEvent;
 pub const StackRequestActionType = @import("./enums/stack-request-action-type.zig").StackRequestActionType;
 pub const TextType = @import("./enums/text-type.zig").TextType;
 pub const TransactionType = @import("./enums/transaction-type.zig").TransactionType;
@@ -81,8 +83,8 @@ pub const LevelChunkPacket = @import("./packets/level-chunk.zig").LevelChunk;
 pub const LevelEventPacket = @import("./packets/level-event.zig").LevelEventPacket;
 pub const LevelEvent = @import("./packets/level-event.zig").LevelEvent;
 pub const LevelSoundEventPacket = @import("./packets/level-sound-event.zig").LevelSoundEventPacket;
-pub const LevelSoundEvent = @import("./packets/level-sound-event.zig").LevelSoundEvent;
 pub const LoginPacket = @import("./packets/login.zig").Login;
+pub const MobArmorEquipmentPacket = @import("./packets/mob-armor-equipment.zig").MobArmorEquipmentPacket;
 pub const MobEquipmentPacket = @import("./packets/mob-equipment.zig").MobEquipmentPacket;
 pub const MoveActorDeltaPacket = @import("./packets/move-actor-delta.zig").MoveActorDeltaPacket;
 pub const MovePlayerPacket = @import("./packets/move-player.zig").MovePlayerPacket;
