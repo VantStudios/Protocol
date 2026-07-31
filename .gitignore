@@ -1,7 +1,26 @@
-.vscode
-.zig-cache
-# TODO! Re-Add docs.
-docs
+# A possible list of disallowed files ( Does not mean that they all exist tho just incase ppl contribute we dont get some weird configs and stuff )
+
 zig-out
 zig-pkg
-.idea/
+dump
+AGENTS.md
+.vscode
+.cursor
+.kiro
+.anigravity
+.cache
+.zig-cache
+.bun
+.build
+.test
+.claude
+.agents/
+skills-lock.json
+
+zig-out-verify
+
+server.properties
+worlds/
+libs/leveldb/lib/
+permissions.json
+banned-players.json
