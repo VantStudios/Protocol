@@ -2,39 +2,39 @@ const std = @import("std");
 const BinaryStream = @import("BinaryStream").BinaryStream;
 
 pub const ServerTelemetryData = struct {
-    serverId: []const u8,
-    scenarioId: []const u8,
-    worldId: []const u8,
-    ownerId: []const u8,
+    server_id: []const u8,
+    scenario_id: []const u8,
+    world_id: []const u8,
+    owner_id: []const u8,
 
-    pub fn init(serverId: []const u8, scenarioId: []const u8, worldId: []const u8, ownerId: []const u8) ServerTelemetryData {
+    pub fn init(server_id: []const u8, scenario_id: []const u8, world_id: []const u8, owner_id: []const u8) ServerTelemetryData {
         return ServerTelemetryData{
-            .serverId = serverId,
-            .scenarioId = scenarioId,
-            .worldId = worldId,
-            .ownerId = ownerId,
+            .server_id = server_id,
+            .scenario_id = scenario_id,
+            .world_id = world_id,
+            .owner_id = owner_id,
         };
     }
 
     pub fn read(stream: *BinaryStream) !ServerTelemetryData {
-        const serverId = try stream.readVarString();
-        const scenarioId = try stream.readVarString();
-        const worldId = try stream.readVarString();
-        const ownerId = try stream.readVarString();
+        const server_id = try stream.readVarString();
+        const scenario_id = try stream.readVarString();
+        const world_id = try stream.readVarString();
+        const owner_id = try stream.readVarString();
 
         return ServerTelemetryData{
-            .serverId = serverId,
-            .scenarioId = scenarioId,
-            .worldId = worldId,
-            .ownerId = ownerId,
+            .server_id = server_id,
+            .scenario_id = scenario_id,
+            .world_id = world_id,
+            .owner_id = owner_id,
         };
     }
 
     pub fn write(stream: *BinaryStream, value: ServerTelemetryData) !void {
-        try stream.writeVarString(value.serverId);
-        try stream.writeVarString(value.scenarioId);
-        try stream.writeVarString(value.worldId);
-        try stream.writeVarString(value.ownerId);
+        try stream.writeVarString(value.server_id);
+        try stream.writeVarString(value.scenario_id);
+        try stream.writeVarString(value.world_id);
+        try stream.writeVarString(value.owner_id);
     }
 
     pub fn deinit(self: *ServerTelemetryData, allocator: std.mem.Allocator) void {

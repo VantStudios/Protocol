@@ -4,24 +4,24 @@ const ItemInstanceUserData = @import("item-instance-user-data.zig").ItemInstance
 
 pub const NetworkItemInstanceDescriptor = struct {
     network: i32,
-    stackSize: ?u16,
+    stack_size: ?u16,
     metadata: ?u32,
-    networkBlockId: ?i32,
+    network_block_id: ?i32,
     extras: ?ItemInstanceUserData,
 
     pub fn read(stream: *BinaryStream, allocator: std.mem.Allocator) !NetworkItemInstanceDescriptor {
         const network = try stream.readZigZag();
         if (network == 0) return .{
             .network = network,
-            .stackSize = null,
+            .stack_size = null,
             .metadata = null,
-            .networkBlockId = null,
+            .network_block_id = null,
             .extras = null,
         };
 
-        const stackSize = try stream.readUint16(.Little);
+        const stack_size = try stream.readUint16(.Little);
         const metadata = try stream.readVarInt();
-        const networkBlockId = try stream.readZigZag();
+        const network_block_id = try stream.readZigZag();
 
         const length = try stream.readVarInt();
         const extras: ?ItemInstanceUserData = if (length > 0)
@@ -31,9 +31,9 @@ pub const NetworkItemInstanceDescriptor = struct {
 
         return .{
             .network = network,
-            .stackSize = stackSize,
+            .stack_size = stack_size,
             .metadata = metadata,
-            .networkBlockId = networkBlockId,
+            .network_block_id = network_block_id,
             .extras = extras,
         };
     }
@@ -42,9 +42,9 @@ pub const NetworkItemInstanceDescriptor = struct {
         try stream.writeZigZag(value.network);
         if (value.network == 0) return;
 
-        try stream.writeUint16(value.stackSize orelse 0, .Little);
+        try stream.writeUint16(value.stack_size orelse 0, .Little);
         try stream.writeVarInt(value.metadata orelse 0);
-        try stream.writeZigZag(value.networkBlockId orelse 0);
+        try stream.writeZigZag(value.network_block_id orelse 0);
 
         if (value.extras) |extras| {
             var sub = BinaryStream.init(allocator, null, null);

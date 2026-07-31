@@ -5,30 +5,30 @@ const Packet = @import("../root.zig").Packet;
 const TextType = @import("../root.zig").TextType;
 
 pub const TextPacket = struct {
-    textType: TextType,
-    needsTranslation: bool = false,
-    sourceName: []const u8 = "",
+    text_type: TextType,
+    needs_translation: bool = false,
+    source_name: []const u8 = "",
     message: []const u8,
     parameters: []const []const u8 = &[_][]const u8{},
     xuid: []const u8 = "",
-    platformChatId: []const u8 = "",
-    filteredMessage: ?[]const u8 = null,
+    platform_chat_id: []const u8 = "",
+    filtered_message: ?[]const u8 = null,
 
     pub fn serialize(self: *TextPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.Text);
-        try stream.writeBool(self.needsTranslation);
+        try stream.writeBool(self.needs_translation);
 
-        const category: u8 = switch (self.textType) {
+        const category: u8 = switch (self.text_type) {
             .Raw, .Tip, .System, .ObjectWhisper, .ObjectAnnouncement, .Object => 0,
             .Chat, .Whisper, .Announcement => 1,
             .Translation, .Popup, .JukeboxPopup => 2,
         };
         try stream.writeUint8(category);
-        try stream.writeUint8(@intFromEnum(self.textType));
+        try stream.writeUint8(@intFromEnum(self.text_type));
 
-        switch (self.textType) {
+        switch (self.text_type) {
             .Chat, .Whisper, .Announcement => {
-                try stream.writeVarString(self.sourceName);
+                try stream.writeVarString(self.source_name);
                 try stream.writeVarString(self.message);
             },
             .Raw, .Tip, .System, .Object, .ObjectWhisper, .ObjectAnnouncement => {
@@ -44,9 +44,9 @@ pub const TextPacket = struct {
         }
 
         try stream.writeVarString(self.xuid);
-        try stream.writeVarString(self.platformChatId);
+        try stream.writeVarString(self.platform_chat_id);
 
-        if (self.filteredMessage) |filtered| {
+        if (self.filtered_message) |filtered| {
             try stream.writeBool(true);
             try stream.writeVarString(filtered);
         } else {
@@ -58,17 +58,17 @@ pub const TextPacket = struct {
 
     pub fn deserialize(stream: *BinaryStream) !TextPacket {
         _ = try stream.readVarInt();
-        const needsTranslation = try stream.readBool();
+        const needs_translation = try stream.readBool();
         _ = try stream.readUint8();
-        const textType: TextType = @enumFromInt(try stream.readUint8());
+        const text_type: TextType = @enumFromInt(try stream.readUint8());
 
-        var sourceName: []const u8 = "";
+        var source_name: []const u8 = "";
         var message: []const u8 = "";
         var parameters: []const []const u8 = &[_][]const u8{};
 
-        switch (textType) {
+        switch (text_type) {
             .Chat, .Whisper, .Announcement => {
-                sourceName = try stream.readVarString();
+                source_name = try stream.readVarString();
                 message = try stream.readVarString();
             },
             .Raw, .Tip, .System, .Object, .ObjectWhisper, .ObjectAnnouncement => {
@@ -88,23 +88,23 @@ pub const TextPacket = struct {
         }
 
         const xuid = try stream.readVarString();
-        const platformChatId = try stream.readVarString();
+        const platform_chat_id = try stream.readVarString();
 
-        var filteredMessage: ?[]const u8 = null;
+        var filtered_message: ?[]const u8 = null;
         const hasFiltered = try stream.readBool();
         if (hasFiltered) {
-            filteredMessage = try stream.readVarString();
+            filtered_message = try stream.readVarString();
         }
 
         return TextPacket{
-            .textType = textType,
-            .needsTranslation = needsTranslation,
-            .sourceName = sourceName,
+            .text_type = text_type,
+            .needs_translation = needs_translation,
+            .source_name = source_name,
             .message = message,
             .parameters = parameters,
             .xuid = xuid,
-            .platformChatId = platformChatId,
-            .filteredMessage = filteredMessage,
+            .platform_chat_id = platform_chat_id,
+            .filtered_message = filtered_message,
         };
     }
 };

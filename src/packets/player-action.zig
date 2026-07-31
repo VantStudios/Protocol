@@ -4,35 +4,35 @@ const BlockPosition = @import("../types/block-position.zig").BlockPosition;
 const PlayerActionType = @import("../enums/player-action-type.zig").PlayerActionType;
 
 pub const PlayerActionPacket = struct {
-    runtimeEntityId: u64,
+    runtime_entity_id: u64,
     action: PlayerActionType,
-    blockPosition: BlockPosition,
-    resultPosition: BlockPosition,
+    block_position: BlockPosition,
+    result_position: BlockPosition,
     face: i32,
 
     pub fn deserialize(stream: *BinaryStream) !PlayerActionPacket {
         _ = try stream.readVarInt();
-        const runtimeEntityId: u64 = @intCast(try stream.readVarLong());
+        const runtime_entity_id: u64 = @intCast(try stream.readVarLong());
         const action: PlayerActionType = @enumFromInt(try stream.readZigZag());
-        const blockPosition = try BlockPosition.read(stream);
-        const resultPosition = try BlockPosition.read(stream);
+        const block_position = try BlockPosition.read(stream);
+        const result_position = try BlockPosition.read(stream);
         const face = try stream.readZigZag();
 
         return .{
-            .runtimeEntityId = runtimeEntityId,
+            .runtime_entity_id = runtime_entity_id,
             .action = action,
-            .blockPosition = blockPosition,
-            .resultPosition = resultPosition,
+            .block_position = block_position,
+            .result_position = result_position,
             .face = face,
         };
     }
 
     pub fn serialize(self: *const PlayerActionPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.PlayerAction);
-        try stream.writeVarLong(self.runtimeEntityId);
+        try stream.writeVarLong(self.runtime_entity_id);
         try stream.writeZigZag(@intFromEnum(self.action));
-        try BlockPosition.write(stream, self.blockPosition);
-        try BlockPosition.write(stream, self.resultPosition);
+        try BlockPosition.write(stream, self.block_position);
+        try BlockPosition.write(stream, self.result_position);
         try stream.writeZigZag(self.face);
         return stream.getBuffer();
     }

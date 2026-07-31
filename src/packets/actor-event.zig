@@ -67,14 +67,14 @@ pub const ActorEventType = enum(u8) {
 };
 
 pub const ActorEventPacket = struct {
-    runtimeEntityId: u64,
+    runtime_entity_id: u64,
     event: ActorEventType,
     data: i32 = 0,
     fire_at_position: ?Vector3f = null,
 
     pub fn serialize(self: *const ActorEventPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.ActorEvent);
-        try stream.writeVarLong(self.runtimeEntityId);
+        try stream.writeVarLong(self.runtime_entity_id);
         try stream.writeUint8(@intFromEnum(self.event));
         try stream.writeZigZag(self.data);
         if (self.fire_at_position) |fire_at_position| {

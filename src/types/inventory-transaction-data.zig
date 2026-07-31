@@ -2,15 +2,15 @@ const Vector3f = @import("vector3f.zig").Vector3f;
 const BlockPosition = @import("block-position.zig").BlockPosition;
 
 pub const LegacySetItemSlot = struct {
-    containerId: u8,
+    container_id: u8,
     slots: []const u8,
 };
 
 pub const InventoryAction = struct {
-    sourceType: u32,
-    windowId: i32,
-    sourceFlags: u32,
-    inventorySlot: u32,
+    source_type: u32,
+    window_id: i32,
+    source_flags: u32,
+    inventory_slot: u32,
 };
 
 pub const NormalTransactionData = struct {
@@ -20,36 +20,36 @@ pub const NormalTransactionData = struct {
 };
 
 pub const UseItemTransactionData = struct {
-    actionType: u32,
-    triggerType: u32,
-    blockPosition: BlockPosition,
-    blockFace: i32,
-    hotBarSlot: i32,
+    action_type: u32,
+    trigger_type: u32,
+    block_position: BlockPosition,
+    block_face: i32,
+    hot_bar_slot: i32,
     position: Vector3f,
-    clickedPosition: Vector3f,
-    blockRuntimeId: u32,
-    clientPrediction: u32,
+    clicked_position: Vector3f,
+    block_runtime_id: u32,
+    client_prediction: u32,
     client_cooldown_state: u32,
 };
 
 pub const UseItemOnEntityTransactionData = struct {
-    targetEntityRuntimeId: u64,
-    actionType: u32,
-    hotBarSlot: i32,
+    target_entity_runtime_id: u64,
+    action_type: u32,
+    hot_bar_slot: i32,
     position: Vector3f,
-    clickedPosition: Vector3f,
+    clicked_position: Vector3f,
 };
 
 pub const ReleaseItemTransactionData = struct {
-    actionType: u32,
-    hotBarSlot: i32,
-    headPosition: Vector3f,
+    action_type: u32,
+    hot_bar_slot: i32,
+    head_position: Vector3f,
 };
 
 pub const TransactionData = union(enum) {
     normal: NormalTransactionData,
     mismatch: void,
-    useItem: UseItemTransactionData,
-    useItemOnEntity: UseItemOnEntityTransactionData,
-    releaseItem: ReleaseItemTransactionData,
+    use_item: UseItemTransactionData,
+    use_item_on_entity: UseItemOnEntityTransactionData,
+    release_item: ReleaseItemTransactionData,
 };

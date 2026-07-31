@@ -4,21 +4,21 @@ const BlockPosition = @import("block-position.zig").BlockPosition;
 const Vector3f = @import("vector3f.zig").Vector3f;
 
 pub const ItemUseTransaction = struct {
-    legacyRequestId: i32,
-    actionType: u32,
-    triggerType: u32,
-    blockPosition: BlockPosition,
-    blockFace: i32,
-    hotBarSlot: i32,
+    legacy_request_id: i32,
+    action_type: u32,
+    trigger_type: u32,
+    block_position: BlockPosition,
+    block_face: i32,
+    hot_bar_slot: i32,
     position: Vector3f,
-    clickedPosition: Vector3f,
-    blockRuntimeId: u32,
-    clientPrediction: u32,
+    clicked_position: Vector3f,
+    block_runtime_id: u32,
+    client_prediction: u32,
 
     pub fn read(stream: *BinaryStream) !ItemUseTransaction {
-        const legacyRequestId = try stream.readZigZag();
+        const legacy_request_id = try stream.readZigZag();
 
-        if (legacyRequestId < -1 and (@as(u32, @bitCast(legacyRequestId)) & 1) == 0) {
+        if (legacy_request_id < -1 and (@as(u32, @bitCast(legacy_request_id)) & 1) == 0) {
             const slot_count = try stream.readVarInt();
             for (0..slot_count) |_| {
                 _ = try stream.readUint8();
@@ -34,28 +34,28 @@ pub const ItemUseTransaction = struct {
             try skipInventoryAction(stream);
         }
 
-        const actionType = try stream.readVarInt();
-        const triggerType = try stream.readVarInt();
-        const blockPosition = try BlockPosition.read(stream);
-        const blockFace = try stream.readZigZag();
-        const hotBarSlot = try stream.readZigZag();
+        const action_type = try stream.readVarInt();
+        const trigger_type = try stream.readVarInt();
+        const block_position = try BlockPosition.read(stream);
+        const block_face = try stream.readZigZag();
+        const hot_bar_slot = try stream.readZigZag();
         try skipItemInstance(stream);
         const position = try Vector3f.read(stream);
-        const clickedPosition = try Vector3f.read(stream);
-        const blockRuntimeId = try stream.readVarInt();
-        const clientPrediction = try stream.readVarInt();
+        const clicked_position = try Vector3f.read(stream);
+        const block_runtime_id = try stream.readVarInt();
+        const client_prediction = try stream.readVarInt();
 
         return .{
-            .legacyRequestId = legacyRequestId,
-            .actionType = actionType,
-            .triggerType = triggerType,
-            .blockPosition = blockPosition,
-            .blockFace = blockFace,
-            .hotBarSlot = hotBarSlot,
+            .legacy_request_id = legacy_request_id,
+            .action_type = action_type,
+            .trigger_type = trigger_type,
+            .block_position = block_position,
+            .block_face = block_face,
+            .hot_bar_slot = hot_bar_slot,
             .position = position,
-            .clickedPosition = clickedPosition,
-            .blockRuntimeId = blockRuntimeId,
-            .clientPrediction = clientPrediction,
+            .clicked_position = clicked_position,
+            .block_runtime_id = block_runtime_id,
+            .client_prediction = client_prediction,
         };
     }
 };

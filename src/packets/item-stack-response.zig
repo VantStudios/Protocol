@@ -39,19 +39,19 @@ test "successful item stack response serializes container updates" {
         .responses = &[_]ItemStackResponse{
             .{
                 .status = .Success,
-                .requestId = 42,
-                .containerInfo = &[_]StackResponseContainerInfo{
+                .request_id = 42,
+                .container_info = &[_]StackResponseContainerInfo{
                     .{
                         .container = FullContainerName.init(ContainerName.Inventory, null),
-                        .slotInfo = &[_]StackResponseSlotInfo{
+                        .slot_info = &[_]StackResponseSlotInfo{
                             .{
                                 .slot = 2,
-                                .hotbarSlot = 2,
+                                .hotbar_slot = 2,
                                 .count = 16,
-                                .stackNetworkId = 9001,
-                                .customName = "Test",
-                                .filteredCustomName = "",
-                                .durabilityCorrection = 7,
+                                .stack_network_id = 9001,
+                                .custom_name = "Test",
+                                .filtered_custom_name = "",
+                                .durability_correction = 7,
                             },
                         },
                     },
@@ -92,11 +92,11 @@ test "error item stack response omits container updates" {
         .responses = &[_]ItemStackResponse{
             .{
                 .status = .CannotPlaceItem,
-                .requestId = 7,
-                .containerInfo = &[_]StackResponseContainerInfo{
+                .request_id = 7,
+                .container_info = &[_]StackResponseContainerInfo{
                     .{
                         .container = FullContainerName.init(ContainerName.Inventory, null),
-                        .slotInfo = &[_]StackResponseSlotInfo{},
+                        .slot_info = &[_]StackResponseSlotInfo{},
                     },
                 },
             },
