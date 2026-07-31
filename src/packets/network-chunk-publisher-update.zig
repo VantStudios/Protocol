@@ -6,13 +6,13 @@ const ChunkCoords = @import("../types/chunk-coords.zig").ChunkCoords;
 pub const NetworkChunkPublisherUpdate = struct {
     coordinate: BlockPosition,
     radius: i32,
-    savedChunks: []const ChunkCoords,
+    saved_chunks: []const ChunkCoords,
 
     pub fn serialize(self: *NetworkChunkPublisherUpdate, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.NetworkChunkPublisherUpdate);
         try BlockPosition.write(stream, self.coordinate);
         try stream.writeVarInt(@intCast(self.radius));
-        try ChunkCoords.write(stream, self.savedChunks);
+        try ChunkCoords.write(stream, self.saved_chunks);
         return stream.getBuffer();
     }
 
@@ -20,12 +20,12 @@ pub const NetworkChunkPublisherUpdate = struct {
         _ = try stream.readVarInt();
         const coordinate = try BlockPosition.read(stream);
         const radius = try stream.readVarInt();
-        const savedChunks = try ChunkCoords.read(stream);
+        const saved_chunks = try ChunkCoords.read(stream);
 
         return NetworkChunkPublisherUpdate{
             .coordinate = coordinate,
             .radius = radius,
-            .savedChunks = savedChunks,
+            .saved_chunks = saved_chunks,
         };
     }
 };

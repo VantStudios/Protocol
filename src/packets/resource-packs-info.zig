@@ -5,23 +5,23 @@ const ResourcePackDescriptor = @import("../types/resource-pack-descriptor.zig").
 const Packet = @import("../root.zig").Packet;
 
 pub const ResourcePacksInfoPacket = struct {
-    mustAccept: bool,
-    hasAddons: bool,
-    hasScripts: bool,
-    forceDisableVibrantVisuals: bool,
-    worldTemplateUuid: []const u8,
-    worldTemplateVersion: []const u8,
+    must_accept: bool,
+    has_addons: bool,
+    has_scripts: bool,
+    force_disable_vibrant_visuals: bool,
+    world_template_uuid: []const u8,
+    world_template_version: []const u8,
     packs: []ResourcePackDescriptor,
 
     pub fn serialize(self: *ResourcePacksInfoPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.ResourcePackInfo);
 
-        try stream.writeBool(self.mustAccept);
-        try stream.writeBool(self.hasAddons);
-        try stream.writeBool(self.hasScripts);
-        try stream.writeBool(self.forceDisableVibrantVisuals);
-        try Uuid.write(stream, self.worldTemplateUuid);
-        try stream.writeVarString(self.worldTemplateVersion);
+        try stream.writeBool(self.must_accept);
+        try stream.writeBool(self.has_addons);
+        try stream.writeBool(self.has_scripts);
+        try stream.writeBool(self.force_disable_vibrant_visuals);
+        try Uuid.write(stream, self.world_template_uuid);
+        try stream.writeVarString(self.world_template_version);
         try ResourcePackDescriptor.write(stream, self.packs);
 
         return stream.getBuffer();
@@ -30,21 +30,21 @@ pub const ResourcePacksInfoPacket = struct {
     pub fn deserialize(stream: *BinaryStream) !ResourcePacksInfoPacket {
         _ = try stream.readVarInt();
 
-        const mustAccept = try stream.readBool();
-        const hasAddons = try stream.readBool();
-        const hasScripts = try stream.readBool();
-        const forceDisableVibrantVisuals = try stream.readBool();
-        const worldTemplateUuid = try Uuid.read(stream);
-        const worldTemplateVersion = try stream.readVarString();
+        const must_accept = try stream.readBool();
+        const has_addons = try stream.readBool();
+        const has_scripts = try stream.readBool();
+        const force_disable_vibrant_visuals = try stream.readBool();
+        const world_template_uuid = try Uuid.read(stream);
+        const world_template_version = try stream.readVarString();
         const packs = try ResourcePackDescriptor.read(stream);
 
         return ResourcePacksInfoPacket{
-            .mustAccept = mustAccept,
-            .hasAddons = hasAddons,
-            .hasScripts = hasScripts,
-            .forceDisableVibrantVisuals = forceDisableVibrantVisuals,
-            .worldTemplateUuid = worldTemplateUuid,
-            .worldTemplateVersion = worldTemplateVersion,
+            .must_accept = must_accept,
+            .has_addons = has_addons,
+            .has_scripts = has_scripts,
+            .force_disable_vibrant_visuals = force_disable_vibrant_visuals,
+            .world_template_uuid = world_template_uuid,
+            .world_template_version = world_template_version,
             .packs = packs,
         };
     }

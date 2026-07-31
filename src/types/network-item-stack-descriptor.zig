@@ -4,10 +4,10 @@ const ItemInstanceUserData = @import("item-instance-user-data.zig").ItemInstance
 
 pub const NetworkItemStackDescriptor = struct {
     network: i32,
-    stackSize: ?u16,
+    stack_size: ?u16,
     metadata: ?u32,
-    itemStackId: ?i32,
-    networkBlockId: ?i32,
+    item_stack_id: ?i32,
+    network_block_id: ?i32,
     extras: ?ItemInstanceUserData,
 
     pub fn deinit(self: *NetworkItemStackDescriptor, allocator: std.mem.Allocator) void {
@@ -39,17 +39,17 @@ pub const NetworkItemStackDescriptor = struct {
         const network = try stream.readZigZag();
         if (network == 0) return .{
             .network = network,
-            .stackSize = null,
+            .stack_size = null,
             .metadata = null,
-            .itemStackId = null,
-            .networkBlockId = null,
+            .item_stack_id = null,
+            .network_block_id = null,
             .extras = null,
         };
 
-        const stackSize = try stream.readUint16(.Little);
+        const stack_size = try stream.readUint16(.Little);
         const metadata = try stream.readVarInt();
-        const itemStackId: ?i32 = if (try stream.readBool()) try stream.readZigZag() else null;
-        const networkBlockId = try stream.readZigZag();
+        const item_stack_id: ?i32 = if (try stream.readBool()) try stream.readZigZag() else null;
+        const network_block_id = try stream.readZigZag();
 
         const length = try stream.readVarInt();
         const extras: ?ItemInstanceUserData = if (length > 0) blk: {
@@ -64,25 +64,25 @@ pub const NetworkItemStackDescriptor = struct {
 
         return .{
             .network = network,
-            .stackSize = stackSize,
+            .stack_size = stack_size,
             .metadata = metadata,
-            .itemStackId = itemStackId,
-            .networkBlockId = networkBlockId,
+            .item_stack_id = item_stack_id,
+            .network_block_id = network_block_id,
             .extras = extras,
         };
     }
 
     pub fn readShort(stream: *BinaryStream, allocator: std.mem.Allocator) !NetworkItemStackDescriptor {
         const network = try stream.readShort(.Little);
-        const stackSize = try stream.readUint16(.Little);
+        const stack_size = try stream.readUint16(.Little);
         const metadata = try stream.readVarInt();
         const hasNetId = try stream.readBool();
-        var itemStackId: ?i32 = null;
+        var item_stack_id: ?i32 = null;
         if (hasNetId) {
             _ = try stream.readVarInt();
-            itemStackId = try stream.readZigZag();
+            item_stack_id = try stream.readZigZag();
         }
-        const networkBlockId = try stream.readZigZag();
+        const network_block_id = try stream.readZigZag();
 
         const length = try stream.readVarInt();
         const extras: ?ItemInstanceUserData = if (length > 0) blk: {
@@ -97,10 +97,10 @@ pub const NetworkItemStackDescriptor = struct {
 
         return .{
             .network = network,
-            .stackSize = stackSize,
+            .stack_size = stack_size,
             .metadata = metadata,
-            .itemStackId = itemStackId,
-            .networkBlockId = networkBlockId,
+            .item_stack_id = item_stack_id,
+            .network_block_id = network_block_id,
             .extras = extras,
         };
     }
@@ -109,17 +109,17 @@ pub const NetworkItemStackDescriptor = struct {
         try stream.writeZigZag(value.network);
         if (value.network == 0) return;
 
-        try stream.writeUint16(value.stackSize orelse 0, .Little);
+        try stream.writeUint16(value.stack_size orelse 0, .Little);
         try stream.writeVarInt(value.metadata orelse 0);
 
-        if (value.itemStackId) |id| {
+        if (value.item_stack_id) |id| {
             try stream.writeBool(true);
             try stream.writeZigZag(id);
         } else {
             try stream.writeBool(false);
         }
 
-        try stream.writeZigZag(value.networkBlockId orelse 0);
+        try stream.writeZigZag(value.network_block_id orelse 0);
 
         if (value.extras) |extras| {
             var sub = BinaryStream.init(allocator, null, null);
@@ -144,10 +144,10 @@ pub const NetworkItemStackDescriptor = struct {
             return;
         }
 
-        try stream.writeUint16(value.stackSize orelse 0, .Little);
+        try stream.writeUint16(value.stack_size orelse 0, .Little);
         try stream.writeVarInt(value.metadata orelse 0);
 
-        if (value.itemStackId) |id| {
+        if (value.item_stack_id) |id| {
             try stream.writeBool(true);
             try stream.writeVarInt(0);
             try stream.writeZigZag(id);
@@ -155,7 +155,7 @@ pub const NetworkItemStackDescriptor = struct {
             try stream.writeBool(false);
         }
 
-        try stream.writeZigZag(value.networkBlockId orelse 0);
+        try stream.writeZigZag(value.network_block_id orelse 0);
 
         if (value.extras) |extras| {
             var sub = BinaryStream.init(allocator, null, null);

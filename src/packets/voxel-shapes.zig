@@ -5,8 +5,8 @@ const SerializableVoxelShape = @import("../types/serializable-voxel-shape.zig").
 
 pub const VoxelShapesPacket = struct {
     shapes: []SerializableVoxelShape,
-    hashString: []const u8,
-    registryHandle: u16,
+    hash_string: []const u8,
+    registry_handle: u16,
 
     pub fn serialize(self: *VoxelShapesPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.VoxelShapes);
@@ -16,8 +16,8 @@ pub const VoxelShapesPacket = struct {
             try SerializableVoxelShape.write(stream, shape);
         }
 
-        try stream.writeVarString(self.hashString);
-        try stream.writeInt16(@bitCast(self.registryHandle), .Little);
+        try stream.writeVarString(self.hash_string);
+        try stream.writeInt16(@bitCast(self.registry_handle), .Little);
 
         return stream.getBuffer();
     }
@@ -32,13 +32,13 @@ pub const VoxelShapesPacket = struct {
             shapes[i] = try SerializableVoxelShape.read(stream);
         }
 
-        const hashString = try stream.readVarString();
-        const registryHandle: u16 = @bitCast(try stream.readInt16(.Little));
+        const hash_string = try stream.readVarString();
+        const registry_handle: u16 = @bitCast(try stream.readInt16(.Little));
 
         return VoxelShapesPacket{
             .shapes = shapes,
-            .hashString = hashString,
-            .registryHandle = registryHandle,
+            .hash_string = hash_string,
+            .registry_handle = registry_handle,
         };
     }
 

@@ -6,7 +6,7 @@ pub const StackRequestActionType = @import("../enums/stack-request-action-type.z
 pub const StackRequestSlotInfo = struct {
     container: FullContainerName,
     slot: u8,
-    stackNetworkId: i32,
+    stack_network_id: i32,
 };
 
 pub const TransferAction = struct {
@@ -27,44 +27,44 @@ pub const DestroyAction = struct {
 };
 
 pub const CreateAction = struct {
-    resultsSlot: u8,
+    results_slot: u8,
 };
 
 pub const BeaconPaymentAction = struct {
-    primaryEffect: i32,
-    secondaryEffect: i32,
+    primary_effect: i32,
+    secondary_effect: i32,
 };
 
 pub const MineBlockAction = struct {
-    hotbarSlot: i32,
-    predictedDurability: i32,
-    stackNetworkId: i32,
+    hotbar_slot: i32,
+    predicted_durability: i32,
+    stack_network_id: i32,
 };
 
 pub const CraftRecipeAction = struct {
-    recipeNetworkId: u32,
-    numberOfCrafts: u8,
+    recipe_network_id: u32,
+    number_of_crafts: u8,
 };
 
 pub const CraftCreativeAction = struct {
-    creativeItemNetworkId: u32,
-    numberOfCrafts: u8,
+    creative_item_network_id: u32,
+    number_of_crafts: u8,
 };
 
 pub const CraftRecipeOptionalAction = struct {
-    recipeNetworkId: u32,
-    filterStringIndex: i32,
+    recipe_network_id: u32,
+    filter_string_index: i32,
 };
 
 pub const CraftGrindstoneAction = struct {
-    recipeNetworkId: u32,
-    numberOfCrafts: u8,
+    recipe_network_id: u32,
+    number_of_crafts: u8,
     cost: i32,
 };
 
 pub const CraftLoomAction = struct {
     pattern: []const u8,
-    timesCrafted: u8,
+    times_crafted: u8,
 };
 
 pub const StackRequestAction = union(enum) {
@@ -75,27 +75,27 @@ pub const StackRequestAction = union(enum) {
     destroy: DestroyAction,
     consume: DestroyAction,
     create: CreateAction,
-    placeInContainer: TransferAction,
-    takeOutContainer: TransferAction,
-    labTableCombine: void,
-    beaconPayment: BeaconPaymentAction,
-    mineBlock: MineBlockAction,
-    craftRecipe: CraftRecipeAction,
-    craftRecipeAuto: CraftRecipeAction,
-    craftCreative: CraftCreativeAction,
-    craftRecipeOptional: CraftRecipeOptionalAction,
-    craftGrindstone: CraftGrindstoneAction,
-    craftLoom: CraftLoomAction,
-    craftNonImplementedDeprecated: void,
-    craftResultsDeprecated: void,
+    place_in_container: TransferAction,
+    take_out_container: TransferAction,
+    lab_table_combine: void,
+    beacon_payment: BeaconPaymentAction,
+    mine_block: MineBlockAction,
+    craft_recipe: CraftRecipeAction,
+    craft_recipe_auto: CraftRecipeAction,
+    craft_creative: CraftCreativeAction,
+    craft_recipe_optional: CraftRecipeOptionalAction,
+    craft_grindstone: CraftGrindstoneAction,
+    craft_loom: CraftLoomAction,
+    craft_non_implemented_deprecated: void,
+    craft_results_deprecated: void,
     unknown: void,
 };
 
 pub const ItemStackRequest = struct {
-    requestId: i32,
+    request_id: i32,
     actions: []StackRequestAction,
-    filterStrings: [][]const u8,
-    filterCause: i32,
+    filter_strings: [][]const u8,
+    filter_cause: i32,
 
     pub fn skip(stream: *BinaryStream) !void {
         _ = try stream.readZigZag();
@@ -111,23 +111,23 @@ pub const ItemStackRequest = struct {
     }
 
     pub fn read(stream: *BinaryStream, allocator: std.mem.Allocator) !ItemStackRequest {
-        const requestId = try stream.readZigZag();
+        const request_id = try stream.readZigZag();
         const action_count = try stream.readVarInt();
         var actions = try allocator.alloc(StackRequestAction, action_count);
         for (0..action_count) |i| {
             actions[i] = try readAction(stream);
         }
         const filter_count = try stream.readVarInt();
-        var filterStrings = try allocator.alloc([]const u8, filter_count);
+        var filter_strings = try allocator.alloc([]const u8, filter_count);
         for (0..filter_count) |i| {
-            filterStrings[i] = try stream.readVarString();
+            filter_strings[i] = try stream.readVarString();
         }
-        const filterCause = try stream.readInt32(.Little);
+        const filter_cause = try stream.readInt32(.Little);
         return .{
-            .requestId = requestId,
+            .request_id = request_id,
             .actions = actions,
-            .filterStrings = filterStrings,
-            .filterCause = filterCause,
+            .filter_strings = filter_strings,
+            .filter_cause = filter_cause,
         };
     }
 };
@@ -135,8 +135,8 @@ pub const ItemStackRequest = struct {
 fn readSlotInfo(stream: *BinaryStream) !StackRequestSlotInfo {
     const container = try FullContainerName.read(stream);
     const slot = try stream.readUint8();
-    const stackNetworkId = try stream.readZigZag();
-    return .{ .container = container, .slot = slot, .stackNetworkId = stackNetworkId };
+    const stack_network_id = try stream.readZigZag();
+    return .{ .container = container, .slot = slot, .stack_network_id = stack_network_id };
 }
 
 fn readTransferAction(stream: *BinaryStream) !TransferAction {
@@ -172,22 +172,22 @@ fn readAction(stream: *BinaryStream) !StackRequestAction {
             const source = try readSlotInfo(stream);
             return .{ .consume = .{ .count = count, .source = source } };
         },
-        .Create => .{ .create = .{ .resultsSlot = try stream.readUint8() } },
-        .PlaceInContainer => .{ .placeInContainer = try readTransferAction(stream) },
-        .TakeOutContainer => .{ .takeOutContainer = try readTransferAction(stream) },
-        .LabTableCombine => .{ .labTableCombine = {} },
-        .BeaconPayment => .{ .beaconPayment = .{
-            .primaryEffect = try stream.readZigZag(),
-            .secondaryEffect = try stream.readZigZag(),
+        .Create => .{ .create = .{ .results_slot = try stream.readUint8() } },
+        .PlaceInContainer => .{ .place_in_container = try readTransferAction(stream) },
+        .TakeOutContainer => .{ .take_out_container = try readTransferAction(stream) },
+        .LabTableCombine => .{ .lab_table_combine = {} },
+        .BeaconPayment => .{ .beacon_payment = .{
+            .primary_effect = try stream.readZigZag(),
+            .secondary_effect = try stream.readZigZag(),
         } },
-        .MineBlock => .{ .mineBlock = .{
-            .hotbarSlot = try stream.readZigZag(),
-            .predictedDurability = try stream.readZigZag(),
-            .stackNetworkId = try stream.readZigZag(),
+        .MineBlock => .{ .mine_block = .{
+            .hotbar_slot = try stream.readZigZag(),
+            .predicted_durability = try stream.readZigZag(),
+            .stack_network_id = try stream.readZigZag(),
         } },
-        .CraftRecipe => .{ .craftRecipe = .{
-            .recipeNetworkId = try stream.readVarInt(),
-            .numberOfCrafts = try stream.readUint8(),
+        .CraftRecipe => .{ .craft_recipe = .{
+            .recipe_network_id = try stream.readVarInt(),
+            .number_of_crafts = try stream.readUint8(),
         } },
         .CraftRecipeAuto => blk: {
             const rid = try stream.readVarInt();
@@ -195,31 +195,31 @@ fn readAction(stream: *BinaryStream) !StackRequestAction {
             _ = try stream.readUint8();
             const ic = try stream.readVarInt();
             for (0..ic) |_| try skipItemDescriptorCount(stream);
-            break :blk .{ .craftRecipeAuto = .{ .recipeNetworkId = rid, .numberOfCrafts = nc } };
+            break :blk .{ .craft_recipe_auto = .{ .recipe_network_id = rid, .number_of_crafts = nc } };
         },
-        .CraftCreative => .{ .craftCreative = .{
-            .creativeItemNetworkId = try stream.readVarInt(),
-            .numberOfCrafts = try stream.readUint8(),
+        .CraftCreative => .{ .craft_creative = .{
+            .creative_item_network_id = try stream.readVarInt(),
+            .number_of_crafts = try stream.readUint8(),
         } },
-        .CraftRecipeOptional => .{ .craftRecipeOptional = .{
-            .recipeNetworkId = try stream.readVarInt(),
-            .filterStringIndex = try stream.readInt32(.Little),
+        .CraftRecipeOptional => .{ .craft_recipe_optional = .{
+            .recipe_network_id = try stream.readVarInt(),
+            .filter_string_index = try stream.readInt32(.Little),
         } },
-        .CraftGrindstone => .{ .craftGrindstone = .{
-            .recipeNetworkId = try stream.readVarInt(),
-            .numberOfCrafts = try stream.readUint8(),
+        .CraftGrindstone => .{ .craft_grindstone = .{
+            .recipe_network_id = try stream.readVarInt(),
+            .number_of_crafts = try stream.readUint8(),
             .cost = try stream.readZigZag(),
         } },
-        .CraftLoom => .{ .craftLoom = .{
+        .CraftLoom => .{ .craft_loom = .{
             .pattern = try stream.readVarString(),
-            .timesCrafted = try stream.readUint8(),
+            .times_crafted = try stream.readUint8(),
         } },
-        .CraftNonImplementedDeprecated => .{ .craftNonImplementedDeprecated = {} },
+        .CraftNonImplementedDeprecated => .{ .craft_non_implemented_deprecated = {} },
         .CraftResultsDeprecated => blk: {
             const c = try stream.readVarInt();
             for (0..c) |_| try skipItemStack(stream);
             _ = try stream.readUint8();
-            break :blk .{ .craftResultsDeprecated = {} };
+            break :blk .{ .craft_results_deprecated = {} };
         },
         _ => .{ .unknown = {} },
     };

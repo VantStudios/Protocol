@@ -17,15 +17,15 @@ const NetworkItemStackDescriptor = @import("../types/network-item-stack-descript
 const Vector3f = @import("../types/vector3f.zig").Vector3f;
 
 pub const InventoryTransactionPacket = struct {
-    legacyRequestId: i32,
-    transactionType: TransactionType,
-    actionCount: u32,
-    transactionData: TransactionData,
+    legacy_request_id: i32,
+    transaction_type: TransactionType,
+    action_count: u32,
+    transaction_data: TransactionData,
 
     pub fn deserialize(stream: *BinaryStream) !InventoryTransactionPacket {
         _ = try stream.readVarInt();
 
-        const legacyRequestId = try stream.readZigZag();
+        const legacy_request_id = try stream.readZigZag();
 
         const has_changed_slots = try stream.readBool();
         if (has_changed_slots) {
@@ -43,92 +43,92 @@ pub const InventoryTransactionPacket = struct {
         if (!has_transaction_type) return error.InvalidPacket;
 
         const transaction_type_raw = try stream.readVarInt();
-        const transactionType: TransactionType = std.enums.fromInt(TransactionType, transaction_type_raw) orelse return error.InvalidTransactionType;
+        const transaction_type: TransactionType = std.enums.fromInt(TransactionType, transaction_type_raw) orelse return error.InvalidTransactionType;
 
         const transaction_data_has_value = try stream.readBool();
         if (!transaction_data_has_value) return error.InvalidPacket;
 
-        const actionCount = try stream.readVarInt();
+        const action_count = try stream.readVarInt();
         var normal_data = NormalTransactionData{};
-        for (0..actionCount) |_| {
-            if (transactionType == .Normal) {
+        for (0..action_count) |_| {
+            if (transaction_type == .Normal) {
                 try readNormalAction(stream, &normal_data);
             } else {
                 try skipInventoryAction(stream);
             }
         }
 
-        const transactionData: TransactionData = switch (transactionType) {
+        const transaction_data: TransactionData = switch (transaction_type) {
             .Normal => .{ .normal = normal_data },
             .Mismatch => .{ .mismatch = {} },
-            .UseItem => .{ .useItem = try readUseItem(stream) },
-            .UseItemOnEntity => .{ .useItemOnEntity = try readUseItemOnEntity(stream) },
-            .ReleaseItem => .{ .releaseItem = try readReleaseItem(stream) },
+            .UseItem => .{ .use_item = try readUseItem(stream) },
+            .UseItemOnEntity => .{ .use_item_on_entity = try readUseItemOnEntity(stream) },
+            .ReleaseItem => .{ .release_item = try readReleaseItem(stream) },
         };
 
         return .{
-            .legacyRequestId = legacyRequestId,
-            .transactionType = transactionType,
-            .actionCount = actionCount,
-            .transactionData = transactionData,
+            .legacy_request_id = legacy_request_id,
+            .transaction_type = transaction_type,
+            .action_count = action_count,
+            .transaction_data = transaction_data,
         };
     }
 };
 
 fn readUseItem(stream: *BinaryStream) !UseItemTransactionData {
-    const actionType = try stream.readVarInt();
-    const triggerType = try stream.readUint8();
-    const blockPosition = try BlockPosition.read(stream);
-    const blockFace = try stream.readByte();
-    const hotBarSlot = try stream.readZigZag();
+    const action_type = try stream.readVarInt();
+    const trigger_type = try stream.readUint8();
+    const block_position = try BlockPosition.read(stream);
+    const block_face = try stream.readByte();
+    const hot_bar_slot = try stream.readZigZag();
     try NetworkItemStackDescriptor.skipShort(stream);
     const position = try Vector3f.read(stream);
-    const clickedPosition = try Vector3f.read(stream);
-    const blockRuntimeId = try stream.readVarInt();
-    const clientPrediction = try stream.readVarInt();
+    const clicked_position = try Vector3f.read(stream);
+    const block_runtime_id = try stream.readVarInt();
+    const client_prediction = try stream.readVarInt();
     const client_cooldown_state = try stream.readVarInt();
 
     return .{
-        .actionType = actionType,
-        .triggerType = triggerType,
-        .blockPosition = blockPosition,
-        .blockFace = blockFace,
-        .hotBarSlot = hotBarSlot,
+        .action_type = action_type,
+        .trigger_type = trigger_type,
+        .block_position = block_position,
+        .block_face = block_face,
+        .hot_bar_slot = hot_bar_slot,
         .position = position,
-        .clickedPosition = clickedPosition,
-        .blockRuntimeId = blockRuntimeId,
-        .clientPrediction = clientPrediction,
+        .clicked_position = clicked_position,
+        .block_runtime_id = block_runtime_id,
+        .client_prediction = client_prediction,
         .client_cooldown_state = client_cooldown_state,
     };
 }
 
 fn readUseItemOnEntity(stream: *BinaryStream) !UseItemOnEntityTransactionData {
-    const targetEntityRuntimeId = try stream.readVarLong();
-    const actionType = try stream.readVarInt();
-    const hotBarSlot = try stream.readZigZag();
+    const target_entity_runtime_id = try stream.readVarLong();
+    const action_type = try stream.readVarInt();
+    const hot_bar_slot = try stream.readZigZag();
     try NetworkItemStackDescriptor.skipShort(stream);
     const position = try Vector3f.read(stream);
-    const clickedPosition = try Vector3f.read(stream);
+    const clicked_position = try Vector3f.read(stream);
 
     return .{
-        .targetEntityRuntimeId = targetEntityRuntimeId,
-        .actionType = actionType,
-        .hotBarSlot = hotBarSlot,
+        .target_entity_runtime_id = target_entity_runtime_id,
+        .action_type = action_type,
+        .hot_bar_slot = hot_bar_slot,
         .position = position,
-        .clickedPosition = clickedPosition,
+        .clicked_position = clicked_position,
     };
 }
 
 fn readReleaseItem(stream: *BinaryStream) !ReleaseItemTransactionData {
-    const actionType = try stream.readVarInt();
-    const hotBarSlot = try stream.readZigZag();
+    const action_type = try stream.readVarInt();
+    const hot_bar_slot = try stream.readZigZag();
     try NetworkItemStackDescriptor.skipShort(stream);
-    const headPosition = try Vector3f.read(stream);
+    const head_position = try Vector3f.read(stream);
 
     return .{
-        .actionType = actionType,
-        .hotBarSlot = hotBarSlot,
-        .headPosition = headPosition,
+        .action_type = action_type,
+        .hot_bar_slot = hot_bar_slot,
+        .head_position = head_position,
     };
 }
 

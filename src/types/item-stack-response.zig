@@ -4,15 +4,15 @@ const StackResponseContainerInfo = @import("stack-response-container-info.zig").
 
 pub const ItemStackResponse = struct {
     status: ItemStackResponseStatus,
-    requestId: i32,
-    containerInfo: []const StackResponseContainerInfo,
+    request_id: i32,
+    container_info: []const StackResponseContainerInfo,
 
     pub fn write(stream: *BinaryStream, value: ItemStackResponse) !void {
         try stream.writeUint8(@intFromEnum(value.status));
-        try stream.writeZigZag(value.requestId);
+        try stream.writeZigZag(value.request_id);
         if (value.status == .Success) {
-            try stream.writeVarInt(@intCast(value.containerInfo.len));
-            for (value.containerInfo) |container_info| {
+            try stream.writeVarInt(@intCast(value.container_info.len));
+            for (value.container_info) |container_info| {
                 try StackResponseContainerInfo.write(stream, container_info);
             }
         }

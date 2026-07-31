@@ -4,12 +4,12 @@ const StackResponseSlotInfo = @import("stack-response-slot-info.zig").StackRespo
 
 pub const StackResponseContainerInfo = struct {
     container: FullContainerName,
-    slotInfo: []const StackResponseSlotInfo,
+    slot_info: []const StackResponseSlotInfo,
 
     pub fn write(stream: *BinaryStream, value: StackResponseContainerInfo) !void {
         try FullContainerName.write(stream, value.container);
-        try stream.writeVarInt(@intCast(value.slotInfo.len));
-        for (value.slotInfo) |slot_info| {
+        try stream.writeVarInt(@intCast(value.slot_info.len));
+        for (value.slot_info) |slot_info| {
             try StackResponseSlotInfo.write(stream, slot_info);
         }
     }

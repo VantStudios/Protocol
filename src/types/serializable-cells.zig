@@ -2,24 +2,24 @@ const std = @import("std");
 const BinaryStream = @import("BinaryStream").BinaryStream;
 
 pub const SerializableCells = struct {
-    xSize: u8,
-    ySize: u8,
-    zSize: u8,
+    x_size: u8,
+    y_size: u8,
+    z_size: u8,
     storage: []u8,
 
-    pub fn init(xSize: u8, ySize: u8, zSize: u8, storage: []u8) SerializableCells {
+    pub fn init(x_size: u8, y_size: u8, z_size: u8, storage: []u8) SerializableCells {
         return SerializableCells{
-            .xSize = xSize,
-            .ySize = ySize,
-            .zSize = zSize,
+            .x_size = x_size,
+            .y_size = y_size,
+            .z_size = z_size,
             .storage = storage,
         };
     }
 
     pub fn read(stream: *BinaryStream) !SerializableCells {
-        const xSize = try stream.readInt8();
-        const ySize = try stream.readInt8();
-        const zSize = try stream.readInt8();
+        const x_size = try stream.readInt8();
+        const y_size = try stream.readInt8();
+        const z_size = try stream.readInt8();
 
         const length = try stream.readVarInt();
         const storage = try stream.allocator.alloc(u8, @intCast(length));
@@ -29,17 +29,17 @@ pub const SerializableCells = struct {
         }
 
         return SerializableCells{
-            .xSize = @bitCast(xSize),
-            .ySize = @bitCast(ySize),
-            .zSize = @bitCast(zSize),
+            .x_size = @bitCast(x_size),
+            .y_size = @bitCast(y_size),
+            .z_size = @bitCast(z_size),
             .storage = storage,
         };
     }
 
     pub fn write(stream: *BinaryStream, value: SerializableCells) !void {
-        try stream.writeInt8(@bitCast(value.xSize));
-        try stream.writeInt8(@bitCast(value.ySize));
-        try stream.writeInt8(@bitCast(value.zSize));
+        try stream.writeInt8(@bitCast(value.x_size));
+        try stream.writeInt8(@bitCast(value.y_size));
+        try stream.writeInt8(@bitCast(value.z_size));
 
         try stream.writeVarInt(@intCast(value.storage.len));
         for (value.storage) |cell| {

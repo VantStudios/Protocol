@@ -14,174 +14,174 @@ const ServerTelemetryData = @import("../types/server-telemetry-data.zig").Server
 const Uuid = @import("../types/uuid.zig").Uuid;
 
 pub const StartGamePacket = struct {
-    entityId: i64,
-    runtimeEntityId: u64,
-    playerGamemode: Gamemode,
-    playerPosition: Vector3f,
+    entity_id: i64,
+    runtime_entity_id: u64,
+    player_gamemode: Gamemode,
+    player_position: Vector3f,
     pitch: f32,
     yaw: f32,
     seed: u64,
-    biomeType: i16,
-    biomeName: []const u8,
+    biome_type: i16,
+    biome_name: []const u8,
     dimension: i32,
     generator: i32,
-    worldGamemode: Gamemode,
+    world_gamemode: Gamemode,
     hardcore: bool,
     difficulty: Difficulty,
-    spawnPosition: BlockPosition,
-    achievementsDisabled: bool,
-    editorWorldType: i32,
-    createdInEditor: bool,
-    exportedFromEditor: bool,
-    dayCycleStopTime: i32,
-    eduOffer: i32,
-    eduFeatures: bool,
-    eduProductUuid: []const u8,
-    rainLevel: f32,
-    lightningLevel: f32,
-    confirmedPlatformLockedContent: bool,
-    multiplayerGame: bool,
-    broadcastToLan: bool,
-    xblBroadcastMode: u32,
-    platformBroadcastMode: u32,
-    commandsEnabled: bool,
-    texturePacksRequired: bool,
+    spawn_position: BlockPosition,
+    achievements_disabled: bool,
+    editor_world_type: i32,
+    created_in_editor: bool,
+    exported_from_editor: bool,
+    day_cycle_stop_time: i32,
+    edu_offer: i32,
+    edu_features: bool,
+    edu_product_uuid: []const u8,
+    rain_level: f32,
+    lightning_level: f32,
+    confirmed_platform_locked_content: bool,
+    multiplayer_game: bool,
+    broadcast_to_lan: bool,
+    xbl_broadcast_mode: u32,
+    platform_broadcast_mode: u32,
+    commands_enabled: bool,
+    texture_packs_required: bool,
     gamerules: []GameRules,
     experiments: []Experiments,
-    experimentsPreviouslyToggled: bool,
-    bonusChest: bool,
-    mapEnabled: bool,
-    permissionLevel: PermissionLevel,
-    serverChunkTickRange: i32,
-    hasLockedBehaviorPack: bool,
-    hasLockedResourcePack: bool,
-    isFromLockedWorldTemplate: bool,
-    useMsaGamertagsOnly: bool,
-    isFromWorldTemplate: bool,
-    isWorldTemplateOptionLocked: bool,
-    onlySpawnV1Villagers: bool,
-    personaDisabled: bool,
-    customSkinsDisabled: bool,
-    emoteChatMuted: bool,
-    gameVersion: []const u8,
-    limitedWorldWidth: i32,
-    limitedWorldLength: i32,
-    isNewNether: bool,
-    eduResourceUriButtonName: []const u8,
-    eduResourceUriLink: []const u8,
-    experimentalGameplayOverride: bool,
-    chatRestrictionLevel: u8,
-    disablePlayerInteractions: bool,
+    experiments_previously_toggled: bool,
+    bonus_chest: bool,
+    map_enabled: bool,
+    permission_level: PermissionLevel,
+    server_chunk_tick_range: i32,
+    has_locked_behavior_pack: bool,
+    has_locked_resource_pack: bool,
+    is_from_locked_world_template: bool,
+    use_msa_gamertags_only: bool,
+    is_from_world_template: bool,
+    is_world_template_option_locked: bool,
+    only_spawn_v1_villagers: bool,
+    persona_disabled: bool,
+    custom_skins_disabled: bool,
+    emote_chat_muted: bool,
+    game_version: []const u8,
+    limited_world_width: i32,
+    limited_world_length: i32,
+    is_new_nether: bool,
+    edu_resource_uri_button_name: []const u8,
+    edu_resource_uri_link: []const u8,
+    experimental_gameplay_override: bool,
+    chat_restriction_level: u8,
+    disable_player_interactions: bool,
     server_editor_connection_policy: u32,
     allow_anonimous_block_drops_in_editor_worlds: bool,
-    levelIdentifier: []const u8,
-    levelName: []const u8,
-    premiumWorldTemplateId: []const u8,
-    isTrial: bool,
-    rewindHistorySize: i32,
-    serverAuthoritativeBlockBreaking: bool,
-    currentTick: u64,
-    enchantmentSeed: i32,
-    blockTypeDefinitions: []NetworkBlockTypeDefinition,
-    multiplayerCorrelationId: []const u8,
-    serverAuthoritativeInventory: bool,
+    level_identifier: []const u8,
+    level_name: []const u8,
+    premium_world_template_id: []const u8,
+    is_trial: bool,
+    rewind_history_size: i32,
+    server_authoritative_block_breaking: bool,
+    current_tick: u64,
+    enchantment_seed: i32,
+    block_type_definitions: []NetworkBlockTypeDefinition,
+    multiplayer_correlation_id: []const u8,
+    server_authoritative_inventory: bool,
     engine: []const u8,
     properties: NBT.Tag,
-    blockPaletteChecksum: u64,
-    worldTemplateId: []const u8,
-    clientSideGeneration: bool,
-    blockNetworkIdsAreHashes: bool,
-    serverControlledSounds: bool,
+    block_palette_checksum: u64,
+    world_template_id: []const u8,
+    client_side_generation: bool,
+    block_network_ids_are_hashes: bool,
+    server_controlled_sounds: bool,
     is_logging_chat: bool,
-    containsServerJoinInfo: bool,
-    serverTelemetryData: ServerTelemetryData,
+    contains_server_join_info: bool,
+    server_telemetry_data: ServerTelemetryData,
 
     pub fn serialize(self: *StartGamePacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.StartGame);
 
-        try stream.writeZigZong(self.entityId);
-        try stream.writeVarLong(self.runtimeEntityId);
-        try stream.writeZigZag(@intFromEnum(self.playerGamemode));
-        try Vector3f.write(stream, self.playerPosition);
+        try stream.writeZigZong(self.entity_id);
+        try stream.writeVarLong(self.runtime_entity_id);
+        try stream.writeZigZag(@intFromEnum(self.player_gamemode));
+        try Vector3f.write(stream, self.player_position);
         try stream.writeFloat32(self.pitch, .Little);
         try stream.writeFloat32(self.yaw, .Little);
         try stream.writeInt64(@bitCast(self.seed), .Little);
-        try stream.writeInt16(self.biomeType, .Little);
-        try stream.writeVarString(self.biomeName);
+        try stream.writeInt16(self.biome_type, .Little);
+        try stream.writeVarString(self.biome_name);
         try stream.writeZigZag(self.dimension);
         try stream.writeZigZag(self.generator);
-        try stream.writeZigZag(@intFromEnum(self.worldGamemode));
+        try stream.writeZigZag(@intFromEnum(self.world_gamemode));
         try stream.writeBool(self.hardcore);
         try stream.writeZigZag(@intFromEnum(self.difficulty));
-        try BlockPosition.write(stream, self.spawnPosition);
-        try stream.writeBool(self.achievementsDisabled);
-        try stream.writeZigZag(self.editorWorldType);
-        try stream.writeBool(self.createdInEditor);
-        try stream.writeBool(self.exportedFromEditor);
-        try stream.writeZigZag(self.dayCycleStopTime);
-        try stream.writeZigZag(self.eduOffer);
-        try stream.writeBool(self.eduFeatures);
-        try stream.writeVarString(self.eduProductUuid);
-        try stream.writeFloat32(self.rainLevel, .Little);
-        try stream.writeFloat32(self.lightningLevel, .Little);
-        try stream.writeBool(self.confirmedPlatformLockedContent);
-        try stream.writeBool(self.multiplayerGame);
-        try stream.writeBool(self.broadcastToLan);
-        try stream.writeVarInt(self.xblBroadcastMode);
-        try stream.writeVarInt(self.platformBroadcastMode);
-        try stream.writeBool(self.commandsEnabled);
-        try stream.writeBool(self.texturePacksRequired);
+        try BlockPosition.write(stream, self.spawn_position);
+        try stream.writeBool(self.achievements_disabled);
+        try stream.writeZigZag(self.editor_world_type);
+        try stream.writeBool(self.created_in_editor);
+        try stream.writeBool(self.exported_from_editor);
+        try stream.writeZigZag(self.day_cycle_stop_time);
+        try stream.writeZigZag(self.edu_offer);
+        try stream.writeBool(self.edu_features);
+        try stream.writeVarString(self.edu_product_uuid);
+        try stream.writeFloat32(self.rain_level, .Little);
+        try stream.writeFloat32(self.lightning_level, .Little);
+        try stream.writeBool(self.confirmed_platform_locked_content);
+        try stream.writeBool(self.multiplayer_game);
+        try stream.writeBool(self.broadcast_to_lan);
+        try stream.writeVarInt(self.xbl_broadcast_mode);
+        try stream.writeVarInt(self.platform_broadcast_mode);
+        try stream.writeBool(self.commands_enabled);
+        try stream.writeBool(self.texture_packs_required);
         try GameRules.write(stream, self.gamerules);
         try Experiments.write(stream, self.experiments);
-        try stream.writeBool(self.experimentsPreviouslyToggled);
-        try stream.writeBool(self.bonusChest);
-        try stream.writeBool(self.mapEnabled);
-        try stream.writeZigZag(@intFromEnum(self.permissionLevel));
-        try stream.writeInt32(self.serverChunkTickRange, .Little);
-        try stream.writeBool(self.hasLockedBehaviorPack);
-        try stream.writeBool(self.hasLockedResourcePack);
-        try stream.writeBool(self.isFromLockedWorldTemplate);
-        try stream.writeBool(self.useMsaGamertagsOnly);
-        try stream.writeBool(self.isFromWorldTemplate);
-        try stream.writeBool(self.isWorldTemplateOptionLocked);
-        try stream.writeBool(self.onlySpawnV1Villagers);
-        try stream.writeBool(self.personaDisabled);
-        try stream.writeBool(self.customSkinsDisabled);
-        try stream.writeBool(self.emoteChatMuted);
-        try stream.writeVarString(self.gameVersion);
-        try stream.writeInt32(self.limitedWorldWidth, .Little);
-        try stream.writeInt32(self.limitedWorldLength, .Little);
-        try stream.writeBool(self.isNewNether);
-        try stream.writeVarString(self.eduResourceUriButtonName);
-        try stream.writeVarString(self.eduResourceUriLink);
-        try stream.writeBool(self.experimentalGameplayOverride);
-        try stream.writeInt8(@bitCast(self.chatRestrictionLevel));
-        try stream.writeBool(self.disablePlayerInteractions);
+        try stream.writeBool(self.experiments_previously_toggled);
+        try stream.writeBool(self.bonus_chest);
+        try stream.writeBool(self.map_enabled);
+        try stream.writeZigZag(@intFromEnum(self.permission_level));
+        try stream.writeInt32(self.server_chunk_tick_range, .Little);
+        try stream.writeBool(self.has_locked_behavior_pack);
+        try stream.writeBool(self.has_locked_resource_pack);
+        try stream.writeBool(self.is_from_locked_world_template);
+        try stream.writeBool(self.use_msa_gamertags_only);
+        try stream.writeBool(self.is_from_world_template);
+        try stream.writeBool(self.is_world_template_option_locked);
+        try stream.writeBool(self.only_spawn_v1_villagers);
+        try stream.writeBool(self.persona_disabled);
+        try stream.writeBool(self.custom_skins_disabled);
+        try stream.writeBool(self.emote_chat_muted);
+        try stream.writeVarString(self.game_version);
+        try stream.writeInt32(self.limited_world_width, .Little);
+        try stream.writeInt32(self.limited_world_length, .Little);
+        try stream.writeBool(self.is_new_nether);
+        try stream.writeVarString(self.edu_resource_uri_button_name);
+        try stream.writeVarString(self.edu_resource_uri_link);
+        try stream.writeBool(self.experimental_gameplay_override);
+        try stream.writeInt8(@bitCast(self.chat_restriction_level));
+        try stream.writeBool(self.disable_player_interactions);
         try stream.writeVarInt(self.server_editor_connection_policy);
         try stream.writeBool(self.allow_anonimous_block_drops_in_editor_worlds);
-        try stream.writeVarString(self.levelIdentifier);
-        try stream.writeVarString(self.levelName);
-        try stream.writeVarString(self.premiumWorldTemplateId);
-        try stream.writeBool(self.isTrial);
-        try stream.writeZigZag(self.rewindHistorySize);
-        try stream.writeBool(self.serverAuthoritativeBlockBreaking);
-        try stream.writeInt64(@bitCast(self.currentTick), .Little);
-        try stream.writeZigZag(self.enchantmentSeed);
-        try NetworkBlockTypeDefinition.write(stream, self.blockTypeDefinitions);
-        try stream.writeVarString(self.multiplayerCorrelationId);
-        try stream.writeBool(self.serverAuthoritativeInventory);
+        try stream.writeVarString(self.level_identifier);
+        try stream.writeVarString(self.level_name);
+        try stream.writeVarString(self.premium_world_template_id);
+        try stream.writeBool(self.is_trial);
+        try stream.writeZigZag(self.rewind_history_size);
+        try stream.writeBool(self.server_authoritative_block_breaking);
+        try stream.writeInt64(@bitCast(self.current_tick), .Little);
+        try stream.writeZigZag(self.enchantment_seed);
+        try NetworkBlockTypeDefinition.write(stream, self.block_type_definitions);
+        try stream.writeVarString(self.multiplayer_correlation_id);
+        try stream.writeBool(self.server_authoritative_inventory);
         try stream.writeVarString(self.engine);
 
         try self.properties.write(stream, .{ .varint = true });
 
-        try stream.writeInt64(@bitCast(self.blockPaletteChecksum), .Little);
-        try Uuid.write(stream, self.worldTemplateId);
-        try stream.writeBool(self.clientSideGeneration);
-        try stream.writeBool(self.blockNetworkIdsAreHashes);
-        try stream.writeBool(self.serverControlledSounds);
+        try stream.writeInt64(@bitCast(self.block_palette_checksum), .Little);
+        try Uuid.write(stream, self.world_template_id);
+        try stream.writeBool(self.client_side_generation);
+        try stream.writeBool(self.block_network_ids_are_hashes);
+        try stream.writeBool(self.server_controlled_sounds);
         try stream.writeBool(self.is_logging_chat);
-        try stream.writeBool(self.containsServerJoinInfo);
-        try ServerTelemetryData.write(stream, self.serverTelemetryData);
+        try stream.writeBool(self.contains_server_join_info);
+        try ServerTelemetryData.write(stream, self.server_telemetry_data);
 
         return stream.getBuffer();
     }
@@ -189,172 +189,172 @@ pub const StartGamePacket = struct {
     pub fn deserialize(stream: *BinaryStream) !StartGamePacket {
         _ = try stream.readVarInt();
 
-        const entityId = try stream.readZigZong();
-        const runtimeEntityId: u64 = @intCast(try stream.readVarLong());
-        const playerGamemode: Gamemode = @enumFromInt(try stream.readZigZag());
-        const playerPosition = try Vector3f.read(stream);
+        const entity_id = try stream.readZigZong();
+        const runtime_entity_id: u64 = @intCast(try stream.readVarLong());
+        const player_gamemode: Gamemode = @enumFromInt(try stream.readZigZag());
+        const player_position = try Vector3f.read(stream);
         const pitch = try stream.readFloat32(.Little);
         const yaw = try stream.readFloat32(.Little);
         const seed: u64 = @bitCast(try stream.readInt64(.Little));
-        const biomeType = try stream.readInt16(.Little);
-        const biomeName = try stream.readVarString();
+        const biome_type = try stream.readInt16(.Little);
+        const biome_name = try stream.readVarString();
         const dimension = try stream.readZigZag();
         const generator = try stream.readZigZag();
-        const worldGamemode: Gamemode = @enumFromInt(try stream.readZigZag());
+        const world_gamemode: Gamemode = @enumFromInt(try stream.readZigZag());
         const hardcore = try stream.readBool();
         const difficulty: Difficulty = @enumFromInt(try stream.readZigZag());
-        const spawnPosition = try BlockPosition.read(stream);
-        const achievementsDisabled = try stream.readBool();
-        const editorWorldType = try stream.readZigZag();
-        const createdInEditor = try stream.readBool();
-        const exportedFromEditor = try stream.readBool();
-        const dayCycleStopTime = try stream.readZigZag();
-        const eduOffer = try stream.readZigZag();
-        const eduFeatures = try stream.readBool();
-        const eduProductUuid = try stream.readVarString();
-        const rainLevel = try stream.readFloat32(.Little);
-        const lightningLevel = try stream.readFloat32(.Little);
-        const confirmedPlatformLockedContent = try stream.readBool();
-        const multiplayerGame = try stream.readBool();
-        const broadcastToLan = try stream.readBool();
-        const xblBroadcastMode: u32 = @intCast(try stream.readVarInt());
-        const platformBroadcastMode: u32 = @intCast(try stream.readVarInt());
-        const commandsEnabled = try stream.readBool();
-        const texturePacksRequired = try stream.readBool();
+        const spawn_position = try BlockPosition.read(stream);
+        const achievements_disabled = try stream.readBool();
+        const editor_world_type = try stream.readZigZag();
+        const created_in_editor = try stream.readBool();
+        const exported_from_editor = try stream.readBool();
+        const day_cycle_stop_time = try stream.readZigZag();
+        const edu_offer = try stream.readZigZag();
+        const edu_features = try stream.readBool();
+        const edu_product_uuid = try stream.readVarString();
+        const rain_level = try stream.readFloat32(.Little);
+        const lightning_level = try stream.readFloat32(.Little);
+        const confirmed_platform_locked_content = try stream.readBool();
+        const multiplayer_game = try stream.readBool();
+        const broadcast_to_lan = try stream.readBool();
+        const xbl_broadcast_mode: u32 = @intCast(try stream.readVarInt());
+        const platform_broadcast_mode: u32 = @intCast(try stream.readVarInt());
+        const commands_enabled = try stream.readBool();
+        const texture_packs_required = try stream.readBool();
         const gamerules = try GameRules.read(stream);
         const experiments = try Experiments.read(stream);
-        const experimentsPreviouslyToggled = try stream.readBool();
-        const bonusChest = try stream.readBool();
-        const mapEnabled = try stream.readBool();
-        const permissionLevel: PermissionLevel = @enumFromInt(try stream.readZigZag());
-        const serverChunkTickRange = try stream.readInt32(.Little);
-        const hasLockedBehaviorPack = try stream.readBool();
-        const hasLockedResourcePack = try stream.readBool();
-        const isFromLockedWorldTemplate = try stream.readBool();
-        const useMsaGamertagsOnly = try stream.readBool();
-        const isFromWorldTemplate = try stream.readBool();
-        const isWorldTemplateOptionLocked = try stream.readBool();
-        const onlySpawnV1Villagers = try stream.readBool();
-        const personaDisabled = try stream.readBool();
-        const customSkinsDisabled = try stream.readBool();
-        const emoteChatMuted = try stream.readBool();
-        const gameVersion = try stream.readVarString();
-        const limitedWorldWidth = try stream.readInt32(.Little);
-        const limitedWorldLength = try stream.readInt32(.Little);
-        const isNewNether = try stream.readBool();
-        const eduResourceUriButtonName = try stream.readVarString();
-        const eduResourceUriLink = try stream.readVarString();
-        const experimentalGameplayOverride = try stream.readBool();
-        const chatRestrictionLevel: u8 = @bitCast(try stream.readInt8());
-        const disablePlayerInteractions = try stream.readBool();
+        const experiments_previously_toggled = try stream.readBool();
+        const bonus_chest = try stream.readBool();
+        const map_enabled = try stream.readBool();
+        const permission_level: PermissionLevel = @enumFromInt(try stream.readZigZag());
+        const server_chunk_tick_range = try stream.readInt32(.Little);
+        const has_locked_behavior_pack = try stream.readBool();
+        const has_locked_resource_pack = try stream.readBool();
+        const is_from_locked_world_template = try stream.readBool();
+        const use_msa_gamertags_only = try stream.readBool();
+        const is_from_world_template = try stream.readBool();
+        const is_world_template_option_locked = try stream.readBool();
+        const only_spawn_v1_villagers = try stream.readBool();
+        const persona_disabled = try stream.readBool();
+        const custom_skins_disabled = try stream.readBool();
+        const emote_chat_muted = try stream.readBool();
+        const game_version = try stream.readVarString();
+        const limited_world_width = try stream.readInt32(.Little);
+        const limited_world_length = try stream.readInt32(.Little);
+        const is_new_nether = try stream.readBool();
+        const edu_resource_uri_button_name = try stream.readVarString();
+        const edu_resource_uri_link = try stream.readVarString();
+        const experimental_gameplay_override = try stream.readBool();
+        const chat_restriction_level: u8 = @bitCast(try stream.readInt8());
+        const disable_player_interactions = try stream.readBool();
         const server_editor_connection_policy = try stream.readVarInt();
         const allow_anonimous_block_drops_in_editor_worlds = try stream.readBool();
-        const levelIdentifier = try stream.readVarString();
-        const levelName = try stream.readVarString();
-        const premiumWorldTemplateId = try stream.readVarString();
-        const isTrial = try stream.readBool();
-        const rewindHistorySize = try stream.readZigZag();
-        const serverAuthoritativeBlockBreaking = try stream.readBool();
-        const currentTick: u64 = @bitCast(try stream.readInt64(.Little));
-        const enchantmentSeed = try stream.readZigZag();
-        const blockTypeDefinitions = try NetworkBlockTypeDefinition.read(stream);
-        const multiplayerCorrelationId = try stream.readVarString();
-        const serverAuthoritativeInventory = try stream.readBool();
+        const level_identifier = try stream.readVarString();
+        const level_name = try stream.readVarString();
+        const premium_world_template_id = try stream.readVarString();
+        const is_trial = try stream.readBool();
+        const rewind_history_size = try stream.readZigZag();
+        const server_authoritative_block_breaking = try stream.readBool();
+        const current_tick: u64 = @bitCast(try stream.readInt64(.Little));
+        const enchantment_seed = try stream.readZigZag();
+        const block_type_definitions = try NetworkBlockTypeDefinition.read(stream);
+        const multiplayer_correlation_id = try stream.readVarString();
+        const server_authoritative_inventory = try stream.readBool();
         const engine = try stream.readVarString();
 
         const properties = try NBT.Tag.read(stream, stream.allocator, .{ .varint = true });
 
-        const blockPaletteChecksum: u64 = @bitCast(try stream.readInt64(.Little));
-        const worldTemplateId = try Uuid.read(stream);
-        const clientSideGeneration = try stream.readBool();
-        const blockNetworkIdsAreHashes = try stream.readBool();
-        const serverControlledSounds = try stream.readBool();
+        const block_palette_checksum: u64 = @bitCast(try stream.readInt64(.Little));
+        const world_template_id = try Uuid.read(stream);
+        const client_side_generation = try stream.readBool();
+        const block_network_ids_are_hashes = try stream.readBool();
+        const server_controlled_sounds = try stream.readBool();
         const is_logging_chat = try stream.readBool();
-        const containsServerJoinInfo = try stream.readBool();
-        const serverTelemetryData = try ServerTelemetryData.read(stream);
+        const contains_server_join_info = try stream.readBool();
+        const server_telemetry_data = try ServerTelemetryData.read(stream);
 
         return StartGamePacket{
-            .entityId = entityId,
-            .runtimeEntityId = runtimeEntityId,
-            .playerGamemode = playerGamemode,
-            .playerPosition = playerPosition,
+            .entity_id = entity_id,
+            .runtime_entity_id = runtime_entity_id,
+            .player_gamemode = player_gamemode,
+            .player_position = player_position,
             .pitch = pitch,
             .yaw = yaw,
             .seed = seed,
-            .biomeType = biomeType,
-            .biomeName = biomeName,
+            .biome_type = biome_type,
+            .biome_name = biome_name,
             .dimension = dimension,
             .generator = generator,
-            .worldGamemode = worldGamemode,
+            .world_gamemode = world_gamemode,
             .hardcore = hardcore,
             .difficulty = difficulty,
-            .spawnPosition = spawnPosition,
-            .achievementsDisabled = achievementsDisabled,
-            .editorWorldType = editorWorldType,
-            .createdInEditor = createdInEditor,
-            .exportedFromEditor = exportedFromEditor,
-            .dayCycleStopTime = dayCycleStopTime,
-            .eduOffer = eduOffer,
-            .eduFeatures = eduFeatures,
-            .eduProductUuid = eduProductUuid,
-            .rainLevel = rainLevel,
-            .lightningLevel = lightningLevel,
-            .confirmedPlatformLockedContent = confirmedPlatformLockedContent,
-            .multiplayerGame = multiplayerGame,
-            .broadcastToLan = broadcastToLan,
-            .xblBroadcastMode = xblBroadcastMode,
-            .platformBroadcastMode = platformBroadcastMode,
-            .commandsEnabled = commandsEnabled,
-            .texturePacksRequired = texturePacksRequired,
+            .spawn_position = spawn_position,
+            .achievements_disabled = achievements_disabled,
+            .editor_world_type = editor_world_type,
+            .created_in_editor = created_in_editor,
+            .exported_from_editor = exported_from_editor,
+            .day_cycle_stop_time = day_cycle_stop_time,
+            .edu_offer = edu_offer,
+            .edu_features = edu_features,
+            .edu_product_uuid = edu_product_uuid,
+            .rain_level = rain_level,
+            .lightning_level = lightning_level,
+            .confirmed_platform_locked_content = confirmed_platform_locked_content,
+            .multiplayer_game = multiplayer_game,
+            .broadcast_to_lan = broadcast_to_lan,
+            .xbl_broadcast_mode = xbl_broadcast_mode,
+            .platform_broadcast_mode = platform_broadcast_mode,
+            .commands_enabled = commands_enabled,
+            .texture_packs_required = texture_packs_required,
             .gamerules = gamerules,
             .experiments = experiments,
-            .experimentsPreviouslyToggled = experimentsPreviouslyToggled,
-            .bonusChest = bonusChest,
-            .mapEnabled = mapEnabled,
-            .permissionLevel = permissionLevel,
-            .serverChunkTickRange = serverChunkTickRange,
-            .hasLockedBehaviorPack = hasLockedBehaviorPack,
-            .hasLockedResourcePack = hasLockedResourcePack,
-            .isFromLockedWorldTemplate = isFromLockedWorldTemplate,
-            .useMsaGamertagsOnly = useMsaGamertagsOnly,
-            .isFromWorldTemplate = isFromWorldTemplate,
-            .isWorldTemplateOptionLocked = isWorldTemplateOptionLocked,
-            .onlySpawnV1Villagers = onlySpawnV1Villagers,
-            .personaDisabled = personaDisabled,
-            .customSkinsDisabled = customSkinsDisabled,
-            .emoteChatMuted = emoteChatMuted,
-            .gameVersion = gameVersion,
-            .limitedWorldWidth = limitedWorldWidth,
-            .limitedWorldLength = limitedWorldLength,
-            .isNewNether = isNewNether,
-            .eduResourceUriButtonName = eduResourceUriButtonName,
-            .eduResourceUriLink = eduResourceUriLink,
-            .experimentalGameplayOverride = experimentalGameplayOverride,
-            .chatRestrictionLevel = chatRestrictionLevel,
-            .disablePlayerInteractions = disablePlayerInteractions,
+            .experiments_previously_toggled = experiments_previously_toggled,
+            .bonus_chest = bonus_chest,
+            .map_enabled = map_enabled,
+            .permission_level = permission_level,
+            .server_chunk_tick_range = server_chunk_tick_range,
+            .has_locked_behavior_pack = has_locked_behavior_pack,
+            .has_locked_resource_pack = has_locked_resource_pack,
+            .is_from_locked_world_template = is_from_locked_world_template,
+            .use_msa_gamertags_only = use_msa_gamertags_only,
+            .is_from_world_template = is_from_world_template,
+            .is_world_template_option_locked = is_world_template_option_locked,
+            .only_spawn_v1_villagers = only_spawn_v1_villagers,
+            .persona_disabled = persona_disabled,
+            .custom_skins_disabled = custom_skins_disabled,
+            .emote_chat_muted = emote_chat_muted,
+            .game_version = game_version,
+            .limited_world_width = limited_world_width,
+            .limited_world_length = limited_world_length,
+            .is_new_nether = is_new_nether,
+            .edu_resource_uri_button_name = edu_resource_uri_button_name,
+            .edu_resource_uri_link = edu_resource_uri_link,
+            .experimental_gameplay_override = experimental_gameplay_override,
+            .chat_restriction_level = chat_restriction_level,
+            .disable_player_interactions = disable_player_interactions,
             .server_editor_connection_policy = server_editor_connection_policy,
             .allow_anonimous_block_drops_in_editor_worlds = allow_anonimous_block_drops_in_editor_worlds,
-            .levelIdentifier = levelIdentifier,
-            .levelName = levelName,
-            .premiumWorldTemplateId = premiumWorldTemplateId,
-            .isTrial = isTrial,
-            .rewindHistorySize = rewindHistorySize,
-            .serverAuthoritativeBlockBreaking = serverAuthoritativeBlockBreaking,
-            .currentTick = currentTick,
-            .enchantmentSeed = enchantmentSeed,
-            .blockTypeDefinitions = blockTypeDefinitions,
-            .multiplayerCorrelationId = multiplayerCorrelationId,
-            .serverAuthoritativeInventory = serverAuthoritativeInventory,
+            .level_identifier = level_identifier,
+            .level_name = level_name,
+            .premium_world_template_id = premium_world_template_id,
+            .is_trial = is_trial,
+            .rewind_history_size = rewind_history_size,
+            .server_authoritative_block_breaking = server_authoritative_block_breaking,
+            .current_tick = current_tick,
+            .enchantment_seed = enchantment_seed,
+            .block_type_definitions = block_type_definitions,
+            .multiplayer_correlation_id = multiplayer_correlation_id,
+            .server_authoritative_inventory = server_authoritative_inventory,
             .engine = engine,
             .properties = properties,
-            .blockPaletteChecksum = blockPaletteChecksum,
-            .worldTemplateId = worldTemplateId,
-            .clientSideGeneration = clientSideGeneration,
-            .blockNetworkIdsAreHashes = blockNetworkIdsAreHashes,
-            .serverControlledSounds = serverControlledSounds,
+            .block_palette_checksum = block_palette_checksum,
+            .world_template_id = world_template_id,
+            .client_side_generation = client_side_generation,
+            .block_network_ids_are_hashes = block_network_ids_are_hashes,
+            .server_controlled_sounds = server_controlled_sounds,
             .is_logging_chat = is_logging_chat,
-            .containsServerJoinInfo = containsServerJoinInfo,
-            .serverTelemetryData = serverTelemetryData,
+            .contains_server_join_info = contains_server_join_info,
+            .server_telemetry_data = server_telemetry_data,
         };
     }
 
@@ -369,12 +369,12 @@ pub const StartGamePacket = struct {
         }
         allocator.free(self.experiments);
 
-        for (self.blockTypeDefinitions) |*definition| {
+        for (self.block_type_definitions) |*definition| {
             definition.deinit(allocator);
         }
-        allocator.free(self.blockTypeDefinitions);
+        allocator.free(self.block_type_definitions);
 
         self.properties.deinit(allocator);
-        self.serverTelemetryData.deinit(allocator);
+        self.server_telemetry_data.deinit(allocator);
     }
 };

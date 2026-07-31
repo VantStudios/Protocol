@@ -5,7 +5,7 @@ const BlockPosition = @import("block-position.zig").BlockPosition;
 
 pub const PlayerBlockAction = struct {
     action: PlayerActionType,
-    blockPos: BlockPosition,
+    block_pos: BlockPosition,
     face: i32,
 
     fn readBlockPos(stream: *BinaryStream) !BlockPosition {
@@ -23,17 +23,17 @@ pub const PlayerBlockAction = struct {
 
     pub fn read(stream: *BinaryStream) !PlayerBlockAction {
         const action: PlayerActionType = @enumFromInt(try stream.readZigZag());
-        var blockPos = BlockPosition.init(0, 0, 0);
+        var block_pos = BlockPosition.init(0, 0, 0);
         var face: i32 = 0;
 
         if (action.hasBlockPos()) {
-            blockPos = try readBlockPos(stream);
+            block_pos = try readBlockPos(stream);
             face = try stream.readZigZag();
         }
 
         return .{
             .action = action,
-            .blockPos = blockPos,
+            .block_pos = block_pos,
             .face = face,
         };
     }
@@ -41,7 +41,7 @@ pub const PlayerBlockAction = struct {
     pub fn write(stream: *BinaryStream, value: PlayerBlockAction) !void {
         try stream.writeZigZag(@intFromEnum(value.action));
         if (value.action.hasBlockPos()) {
-            try writeBlockPos(stream, value.blockPos);
+            try writeBlockPos(stream, value.block_pos);
             try stream.writeZigZag(value.face);
         }
     }

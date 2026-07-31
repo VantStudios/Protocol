@@ -17,22 +17,22 @@ pub const PlayerAuthInputPacket = struct {
     rotation: Vector2f,
     position: Vector3f,
     motion: Vector2f,
-    headYaw: f32,
-    inputData: PlayerAuthInputData,
-    inputMode: InputMode,
-    playMode: PlayMode,
-    interactionMode: InteractionMode,
-    interactRotation: Vector2f,
-    inputTick: u64,
-    positionDelta: Vector3f,
-    itemTransaction: ?ItemUseTransaction,
-    blockActions: [MAX_BLOCK_ACTIONS]PlayerBlockAction,
-    blockActionCount: u32,
-    vehicleRotation: Vector2f,
-    clientPredictedVehicle: i64,
-    analogueMotion: Vector2f,
-    cameraOrientation: Vector3f,
-    rawMoveVector: Vector2f,
+    head_yaw: f32,
+    input_data: PlayerAuthInputData,
+    input_mode: InputMode,
+    play_mode: PlayMode,
+    interaction_mode: InteractionMode,
+    interact_rotation: Vector2f,
+    input_tick: u64,
+    position_delta: Vector3f,
+    item_transaction: ?ItemUseTransaction,
+    block_actions: [MAX_BLOCK_ACTIONS]PlayerBlockAction,
+    block_action_count: u32,
+    vehicle_rotation: Vector2f,
+    client_predicted_vehicle: i64,
+    analogue_motion: Vector2f,
+    camera_orientation: Vector3f,
+    raw_move_vector: Vector2f,
 
     const MAX_BLOCK_ACTIONS = 16;
 
@@ -42,69 +42,69 @@ pub const PlayerAuthInputPacket = struct {
         const rotation = try Vector2f.read(stream);
         const position = try Vector3f.read(stream);
         const motion = try Vector2f.read(stream);
-        const headYaw = try stream.readFloat32(.Little);
-        const inputData = try PlayerAuthInputData.read(stream);
-        const inputMode: InputMode = @enumFromInt(try stream.readVarInt());
-        const playMode: PlayMode = @enumFromInt(try stream.readVarInt());
-        const interactionMode: InteractionMode = @enumFromInt(try stream.readVarInt());
-        const interactRotation = try Vector2f.read(stream);
-        const inputTick: u64 = @intCast(try stream.readVarLong());
-        const positionDelta = try Vector3f.read(stream);
+        const head_yaw = try stream.readFloat32(.Little);
+        const input_data = try PlayerAuthInputData.read(stream);
+        const input_mode: InputMode = @enumFromInt(try stream.readVarInt());
+        const play_mode: PlayMode = @enumFromInt(try stream.readVarInt());
+        const interaction_mode: InteractionMode = @enumFromInt(try stream.readVarInt());
+        const interact_rotation = try Vector2f.read(stream);
+        const input_tick: u64 = @intCast(try stream.readVarLong());
+        const position_delta = try Vector3f.read(stream);
 
-        var itemTransaction: ?ItemUseTransaction = null;
-        if (inputData.hasFlag(.PerformItemInteraction)) {
-            itemTransaction = try ItemUseTransaction.read(stream);
+        var item_transaction: ?ItemUseTransaction = null;
+        if (input_data.hasFlag(.PerformItemInteraction)) {
+            item_transaction = try ItemUseTransaction.read(stream);
         }
 
-        if (inputData.hasFlag(.PerformItemStackRequest)) {
+        if (input_data.hasFlag(.PerformItemStackRequest)) {
             try ItemStackRequest.skip(stream);
         }
 
-        var blockActions: [MAX_BLOCK_ACTIONS]PlayerBlockAction = undefined;
-        var blockActionCount: u32 = 0;
-        if (inputData.hasFlag(.PerformBlockActions)) {
+        var block_actions: [MAX_BLOCK_ACTIONS]PlayerBlockAction = undefined;
+        var block_action_count: u32 = 0;
+        if (input_data.hasFlag(.PerformBlockActions)) {
             const count: u32 = @intCast(try stream.readZigZag());
             const read_count = @min(count, MAX_BLOCK_ACTIONS);
             for (0..read_count) |i| {
-                blockActions[i] = try PlayerBlockAction.read(stream);
+                block_actions[i] = try PlayerBlockAction.read(stream);
             }
             for (read_count..count) |_| {
                 _ = try PlayerBlockAction.read(stream);
             }
-            blockActionCount = read_count;
+            block_action_count = read_count;
         }
 
-        var vehicleRotation = Vector2f.init(0, 0);
-        var clientPredictedVehicle: i64 = 0;
-        if (inputData.hasFlag(.IsInClientPredictedVehicle)) {
-            vehicleRotation = try Vector2f.read(stream);
-            clientPredictedVehicle = try stream.readZigZong();
+        var vehicle_rotation = Vector2f.init(0, 0);
+        var client_predicted_vehicle: i64 = 0;
+        if (input_data.hasFlag(.IsInClientPredictedVehicle)) {
+            vehicle_rotation = try Vector2f.read(stream);
+            client_predicted_vehicle = try stream.readZigZong();
         }
 
-        const analogueMotion = try Vector2f.read(stream);
-        const cameraOrientation = try Vector3f.read(stream);
-        const rawMoveVector = try Vector2f.read(stream);
+        const analogue_motion = try Vector2f.read(stream);
+        const camera_orientation = try Vector3f.read(stream);
+        const raw_move_vector = try Vector2f.read(stream);
 
         return PlayerAuthInputPacket{
             .rotation = rotation,
             .position = position,
             .motion = motion,
-            .headYaw = headYaw,
-            .inputData = inputData,
-            .inputMode = inputMode,
-            .playMode = playMode,
-            .interactionMode = interactionMode,
-            .interactRotation = interactRotation,
-            .inputTick = inputTick,
-            .positionDelta = positionDelta,
-            .itemTransaction = itemTransaction,
-            .blockActions = blockActions,
-            .blockActionCount = blockActionCount,
-            .vehicleRotation = vehicleRotation,
-            .clientPredictedVehicle = clientPredictedVehicle,
-            .analogueMotion = analogueMotion,
-            .cameraOrientation = cameraOrientation,
-            .rawMoveVector = rawMoveVector,
+            .head_yaw = head_yaw,
+            .input_data = input_data,
+            .input_mode = input_mode,
+            .play_mode = play_mode,
+            .interaction_mode = interaction_mode,
+            .interact_rotation = interact_rotation,
+            .input_tick = input_tick,
+            .position_delta = position_delta,
+            .item_transaction = item_transaction,
+            .block_actions = block_actions,
+            .block_action_count = block_action_count,
+            .vehicle_rotation = vehicle_rotation,
+            .client_predicted_vehicle = client_predicted_vehicle,
+            .analogue_motion = analogue_motion,
+            .camera_orientation = camera_orientation,
+            .raw_move_vector = raw_move_vector,
         };
     }
 
@@ -114,35 +114,35 @@ pub const PlayerAuthInputPacket = struct {
         try Vector2f.write(stream, self.rotation);
         try Vector3f.write(stream, self.position);
         try Vector2f.write(stream, self.motion);
-        try stream.writeFloat32(self.headYaw, .Little);
-        try PlayerAuthInputData.write(stream, self.inputData);
-        try stream.writeVarInt(@intFromEnum(self.inputMode));
-        try stream.writeVarInt(@intFromEnum(self.playMode));
-        try stream.writeVarInt(@intFromEnum(self.interactionMode));
-        try Vector2f.write(stream, self.interactRotation);
-        try stream.writeVarLong(@intCast(self.inputTick));
-        try Vector3f.write(stream, self.positionDelta);
+        try stream.writeFloat32(self.head_yaw, .Little);
+        try PlayerAuthInputData.write(stream, self.input_data);
+        try stream.writeVarInt(@intFromEnum(self.input_mode));
+        try stream.writeVarInt(@intFromEnum(self.play_mode));
+        try stream.writeVarInt(@intFromEnum(self.interaction_mode));
+        try Vector2f.write(stream, self.interact_rotation);
+        try stream.writeVarLong(@intCast(self.input_tick));
+        try Vector3f.write(stream, self.position_delta);
 
-        if (self.inputData.hasFlag(.PerformBlockActions)) {
-            try stream.writeZigZag(@intCast(self.blockActionCount));
-            for (0..self.blockActionCount) |i| {
-                try PlayerBlockAction.write(stream, self.blockActions[i]);
+        if (self.input_data.hasFlag(.PerformBlockActions)) {
+            try stream.writeZigZag(@intCast(self.block_action_count));
+            for (0..self.block_action_count) |i| {
+                try PlayerBlockAction.write(stream, self.block_actions[i]);
             }
         }
 
-        if (self.inputData.hasFlag(.IsInClientPredictedVehicle)) {
-            try Vector2f.write(stream, self.vehicleRotation);
-            try stream.writeZigZong(self.clientPredictedVehicle);
+        if (self.input_data.hasFlag(.IsInClientPredictedVehicle)) {
+            try Vector2f.write(stream, self.vehicle_rotation);
+            try stream.writeZigZong(self.client_predicted_vehicle);
         }
 
-        try Vector2f.write(stream, self.analogueMotion);
-        try Vector3f.write(stream, self.cameraOrientation);
-        try Vector2f.write(stream, self.rawMoveVector);
+        try Vector2f.write(stream, self.analogue_motion);
+        try Vector3f.write(stream, self.camera_orientation);
+        try Vector2f.write(stream, self.raw_move_vector);
 
         return stream.getBuffer();
     }
 
     pub fn getBlockActions(self: *const PlayerAuthInputPacket) []const PlayerBlockAction {
-        return self.blockActions[0..self.blockActionCount];
+        return self.block_actions[0..self.block_action_count];
     }
 };
