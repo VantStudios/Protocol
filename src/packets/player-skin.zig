@@ -15,7 +15,6 @@ pub const PlayerSkinPacket = struct {
         try SerializedSkin.write(stream, self.skin, allocator);
         try stream.writeVarString("");
         try stream.writeVarString("");
-        try stream.writeBool(self.skin.trusted_skin);
         return stream.getBuffer();
     }
 };

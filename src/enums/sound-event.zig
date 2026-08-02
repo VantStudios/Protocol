@@ -566,6 +566,9 @@ pub const SoundEvent = enum {
     bucket_empty_land_animal,
     geyser_continuous_eruption_start,
     geyser_continuous_eruption_active,
+    mount,
+    dismount,
+    straw_bed_break_leave,
     undefined,
 
     pub fn asString(self: SoundEvent) []const u8 {
@@ -915,6 +918,9 @@ pub const SoundEvent = enum {
             .item_golden_spear_use => "item.golden_spear.use",
             .item_diamond_spear_use => "item.diamond_spear.use",
             .item_netherite_spear_use => "item.netherite_spear.use",
+            .mount => "mount",
+            .dismount => "dismount",
+            .straw_bed_break_leave => "straw_bed.break_leave",
             else => @tagName(self),
         };
     }

@@ -52,6 +52,11 @@ pub const SerializedSkin = struct {
         try stream.writeBool(skin.cape_on_classic_skin);
         try stream.writeBool(true);
         try stream.writeBool(true);
+
+        const trusted: u8 = if (skin.trusted_skin) 2 else 1;
+        try stream.writeUint8(trusted);
+
+        try stream.writeVarString(skin.profile_hash);
     }
 
     fn writeAnimation(stream: *BinaryStream, anim: *const SkinAnimation, allocator: std.mem.Allocator) !void {

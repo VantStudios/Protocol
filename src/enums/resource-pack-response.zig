@@ -1,7 +1,6 @@
 pub const ResourcePackResponse = enum(u8) {
-    None = 0,
-    Refused = 1,
-    SendPacks = 2,
-    HaveAllPacks = 3,
-    Completed = 4,
+    Cancel = 0,
+    Downloading = 1,
+    DownloadingFinished = 2,
+    ResourcePackStackFinished = 3,
 };

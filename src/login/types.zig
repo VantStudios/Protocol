@@ -127,6 +127,7 @@ pub const ClientData = struct {
     premium_skin: bool,
     cape_on_classic_skin: bool,
     trusted_skin: bool,
+    profile_hash: []const u8 = "",
     arm_size: []const u8,
     skin_color: []const u8,
 

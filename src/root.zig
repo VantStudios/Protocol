@@ -1,5 +1,5 @@
-pub const PROTOCOL = 1001;
-pub const MINECRAFT_VERSION = "1.26.30";
+pub const PROTOCOL = 2169;
+pub const MINECRAFT_VERSION = "1.26.40";
 pub const SHIELD_NETWORK_ID = 387;
 
 pub const NBT = @import("nbt");
