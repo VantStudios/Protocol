@@ -23,9 +23,10 @@ pub const LevelChunk = struct {
         try stream.writeVarInt(self.sub_chunk_count);
 
         if (self.client_request_subchunk_limit) |limit| {
+            try stream.writeBool(true);
             try stream.writeZigZag(limit);
         } else {
-            try stream.writeZigZag(-1);
+            try stream.writeBool(false);
         }
 
         try stream.writeBool(self.cache_enabled);
@@ -49,7 +50,12 @@ pub const LevelChunk = struct {
         const dimension: DimensionType = @enumFromInt(dimension_raw);
 
         const sub_chunk_count = try stream.readVarInt();
-        const client_request_limit_raw = try stream.readZigZag();
+
+        var client_request_limit: ?i32 = null;
+        if (try stream.readBool()) {
+            client_request_limit = try stream.readZigZag();
+        }
+
         const cache_enabled = try stream.readBool();
 
         var blobs: []const u64 = &[_]u64{};
@@ -73,10 +79,7 @@ pub const LevelChunk = struct {
             .z = z,
             .dimension = dimension,
             .sub_chunk_count = sub_chunk_count,
-            .client_request_subchunk_limit = if (client_request_limit_raw < 0)
-                null
-            else
-                client_request_limit_raw,
+            .client_request_subchunk_limit = client_request_limit,
             .cache_enabled = cache_enabled,
             .blobs = blobs,
             .data = data,
