@@ -7,7 +7,7 @@ Minecraft Bedrock protocol library for Zig 0.16.0.
 Add the dependency with `zig fetch`:
 
 ```sh
-zig fetch --save git+https://github.com/VantStudios/Protocol.git.git
+zig fetch --save git+https://github.com/VantStudios/Protocol.git
 ```
 
 Then in your `build.zig`:
