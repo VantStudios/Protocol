@@ -1,21 +1,27 @@
+const std = @import("std");
 const BinaryStream = @import("BinaryStream").BinaryStream;
 const Packet = @import("../root.zig").Packet;
 const DisconnectReason = @import("../root.zig").DisconnectReason;
 
+pub const DisconnectMessages = struct {
+    message: []const u8,
+    filtered_message: []const u8,
+};
+
 pub const Disconnect = struct {
     reason: DisconnectReason,
-    hide_screen: bool,
-    message: ?[]const u8 = null,
-    filtered: ?[]const u8 = null,
+    messages: ?DisconnectMessages = null,
 
     pub fn serialize(self: *Disconnect, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.Disconnect);
         try stream.writeZigZag(@intFromEnum(self.reason));
-        try stream.writeZigZag(if (self.hide_screen) 1 else 0);
 
-        if (!self.hide_screen) {
-            try stream.writeVarString(self.message orelse "Disconnected from server.");
-            try stream.writeVarString(self.filtered orelse "Disconnected from server.");
+        if (self.messages) |msgs| {
+            try stream.writeVarInt(1);
+            try stream.writeVarString(msgs.message);
+            try stream.writeVarString(msgs.filtered_message);
+        } else {
+            try stream.writeVarInt(0);
         }
 
         return stream.getBuffer();
@@ -23,20 +29,22 @@ pub const Disconnect = struct {
 
     pub fn deserialize(stream: *BinaryStream) !Disconnect {
         _ = try stream.readVarInt();
-        const reason: DisconnectReason = @enumFromInt(try stream.readZigZag());
-        const hide_screen = try stream.readZigZag();
+        const reason: DisconnectReason = std.enums.fromInt(DisconnectReason, try stream.readZigZag()) orelse return error.UnknownDisconnectReason;
 
-        if (!hide_screen) {
-            return Disconnect{
-                .reason = reason,
-                .hide_screen = hide_screen == 0,
-                .message = try stream.readVarString(),
-                .filtered = try stream.readVarString(),
+        const has_messages = try stream.readVarInt();
+        var messages: ?DisconnectMessages = null;
+        if (has_messages != 0) {
+            const msg = try stream.readVarString();
+            const filtered = try stream.readVarString();
+            messages = .{
+                .message = msg,
+                .filtered_message = filtered,
             };
         }
+
         return Disconnect{
             .reason = reason,
-            .hide_screen = hide_screen,
+            .messages = messages,
         };
     }
 };

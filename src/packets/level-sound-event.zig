@@ -14,24 +14,19 @@ pub const LevelSoundEventPacket = struct {
     is_baby_mob: bool,
     is_global: bool,
     unique_actor_id: i64 = -1,
-    fire_at_position: ?Vector3f = null,
+    fire_at_position: Vector3f = Vector3f.init(0, 0, 0),
 
     pub fn serialize(self: *const LevelSoundEventPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.LevelSoundEvent);
 
         try stream.writeVarString(self.event.asString());
         try Vector3f.write(stream, self.position);
-        try stream.writeVarInt(@as(u32, @bitCast(self.data)));
+        try stream.writeZigZag(self.data);
         try stream.writeVarString(self.actor_identifier);
         try stream.writeBool(self.is_baby_mob);
         try stream.writeBool(self.is_global);
         try stream.writeInt64(self.unique_actor_id, .Little);
-        if (self.fire_at_position) |fire_at_position| {
-            try stream.writeBool(true);
-            try Vector3f.write(stream, fire_at_position);
-        } else {
-            try stream.writeBool(false);
-        }
+        try Vector3f.write(stream, self.fire_at_position);
         return stream.getBuffer();
     }
 
@@ -41,18 +36,14 @@ pub const LevelSoundEventPacket = struct {
         const eventStr = try stream.readVarString();
         const event = SoundEvent.fromString(eventStr);
         const position = try Vector3f.read(stream);
-        const data_raw = try stream.readVarInt();
-        const data = @as(i32, @bitCast(data_raw));
+        const data = try stream.readZigZag();
         const raw_actor_id = try stream.readVarString();
         const actor_identifier = try allocator.dupe(u8, raw_actor_id);
         errdefer allocator.free(actor_identifier);
         const is_baby_mob = try stream.readBool();
         const is_global = try stream.readBool();
         const unique_actor_id = try stream.readInt64(.Little);
-        var fire_at_position: ?Vector3f = null;
-        if (try stream.readBool()) {
-            fire_at_position = try Vector3f.read(stream);
-        }
+        const fire_at_position = try Vector3f.read(stream);
 
         return .{
             .event = event,

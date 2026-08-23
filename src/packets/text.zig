@@ -1,6 +1,5 @@
 const std = @import("std");
 const BinaryStream = @import("BinaryStream").BinaryStream;
-const ResourcePackDescriptor = @import("../types/resource-pack-descriptor.zig").ResourcePackDescriptor;
 const Packet = @import("../root.zig").Packet;
 const TextType = @import("../root.zig").TextType;
 
@@ -18,13 +17,7 @@ pub const TextPacket = struct {
         try stream.writeVarInt(Packet.Text);
         try stream.writeBool(self.needs_translation);
 
-        const category: u8 = switch (self.text_type) {
-            .Raw, .Tip, .System, .ObjectWhisper, .ObjectAnnouncement, .Object => 0,
-            .Chat, .Whisper, .Announcement => 1,
-            .Translation, .Popup, .JukeboxPopup => 2,
-        };
-        try stream.writeUint8(category);
-        try stream.writeUint8(@intFromEnum(self.text_type));
+        try stream.writeVarInt(@intFromEnum(self.text_type));
 
         switch (self.text_type) {
             .Chat, .Whisper, .Announcement => {
@@ -59,8 +52,7 @@ pub const TextPacket = struct {
     pub fn deserialize(stream: *BinaryStream) !TextPacket {
         _ = try stream.readVarInt();
         const needs_translation = try stream.readBool();
-        _ = try stream.readUint8();
-        const text_type: TextType = @enumFromInt(try stream.readUint8());
+        const text_type: TextType = std.enums.fromInt(TextType, try stream.readVarInt()) orelse return error.UnknownTextType;
 
         var source_name: []const u8 = "";
         var message: []const u8 = "";

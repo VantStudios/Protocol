@@ -7,12 +7,14 @@ pub const ChangeDimensionPacket = struct {
     dimension: DimensionType,
     position: Vector3f,
     respawn: bool,
+    loading_screen_id: u32 = 0,
 
     pub fn serialize(self: *ChangeDimensionPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.ChangeDimension);
         try stream.writeZigZag(@intFromEnum(self.dimension));
         try Vector3f.write(stream, self.position);
         try stream.writeBool(self.respawn);
+        try stream.writeUint32(self.loading_screen_id, .Little);
         return stream.getBuffer();
     }
 };
