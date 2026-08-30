@@ -4,11 +4,11 @@ const ItemInstanceUserData = @import("item-instance-user-data.zig").ItemInstance
 
 pub const NetworkItemStackDescriptor = struct {
     network: i32,
-    stack_size: ?u16,
-    metadata: ?u32,
-    item_stack_id: ?i32,
-    network_block_id: ?i32,
-    extras: ?ItemInstanceUserData,
+    stack_size: ?u16 = null,
+    metadata: ?u32 = null,
+    item_stack_id: ?i32 = null,
+    network_block_id: ?i32 = null,
+    extras: ?ItemInstanceUserData = null,
 
     pub fn deinit(self: *NetworkItemStackDescriptor, allocator: std.mem.Allocator) void {
         if (self.extras) |*extras| extras.deinit(allocator);

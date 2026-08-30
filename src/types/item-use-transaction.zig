@@ -1,5 +1,7 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const BlockPosition = @import("block-position.zig").BlockPosition;
 const Vector3f = @import("vector3f.zig").Vector3f;
 
@@ -57,6 +59,10 @@ pub const ItemUseTransaction = struct {
             .block_runtime_id = block_runtime_id,
             .client_prediction = client_prediction,
         };
+    }
+
+    pub fn write(_: *BinaryStream, _: ItemUseTransaction) !void {
+        return error.UnsupportedItemUseTransactionWrite;
     }
 };
 

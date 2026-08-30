@@ -1,12 +1,14 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const Packet = @import("../root.zig").Packet;
-const ItemStackResponse = @import("../types/item-stack-response.zig").ItemStackResponse;
-const StackResponseContainerInfo = @import("../types/stack-response-container-info.zig").StackResponseContainerInfo;
-const StackResponseSlotInfo = @import("../types/stack-response-slot-info.zig").StackResponseSlotInfo;
 const ContainerName = @import("../root.zig").ContainerName;
 const FullContainerName = @import("../root.zig").FullContainerName;
 const ItemStackResponseStatus = @import("../root.zig").ItemStackResponseStatus;
+const ItemStackResponse = @import("../types/item-stack-response.zig").ItemStackResponse;
+const StackResponseContainerInfo = @import("../types/stack-response-container-info.zig").StackResponseContainerInfo;
+const StackResponseSlotInfo = @import("../types/stack-response-slot-info.zig").StackResponseSlotInfo;
 
 pub const ItemStackResponsePacket = struct {
     responses: []const ItemStackResponse,
@@ -68,6 +70,8 @@ test "successful item stack response serializes container updates" {
     try std.testing.expectEqual(@as(u32, 1), try read_stream.readVarInt());
     try std.testing.expectEqual(@as(u8, @intFromEnum(ItemStackResponseStatus.Success)), try read_stream.readUint8());
     try std.testing.expectEqual(@as(i32, 42), try read_stream.readZigZag());
+    try std.testing.expect(try read_stream.readBool());
+    try std.testing.expect(try read_stream.readBool());
     try std.testing.expectEqual(@as(u32, 1), try read_stream.readVarInt());
     try std.testing.expectEqual(ContainerName.Inventory, @as(ContainerName, @enumFromInt(try read_stream.readUint8())));
     try std.testing.expect(!(try read_stream.readBool()));
@@ -82,7 +86,7 @@ test "successful item stack response serializes container updates" {
     try std.testing.expectEqual(buf.len, read_stream.offset);
 }
 
-test "error item stack response omits container updates" {
+test "error item stack response carries empty containers opt-in" {
     const allocator = std.testing.allocator;
 
     var stream = BinaryStream.init(allocator, null, null);
@@ -111,5 +115,8 @@ test "error item stack response omits container updates" {
     try std.testing.expectEqual(@as(u32, 1), try read_stream.readVarInt());
     try std.testing.expectEqual(@as(u8, @intFromEnum(ItemStackResponseStatus.CannotPlaceItem)), try read_stream.readUint8());
     try std.testing.expectEqual(@as(i32, 7), try read_stream.readZigZag());
+    try std.testing.expect(try read_stream.readBool());
+    try std.testing.expect(try read_stream.readBool());
+    try std.testing.expectEqual(@as(u32, 1), try read_stream.readVarInt());
     try std.testing.expectEqual(buf.len, read_stream.offset);
 }

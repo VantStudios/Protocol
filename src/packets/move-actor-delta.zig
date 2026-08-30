@@ -12,7 +12,6 @@ pub const MoveActorDeltaPacket = struct {
     force_move: bool = false,
     force_move_local_entity: bool = false,
     force_completion: bool = false,
-    ticks: u64 = 0,
 
     pub fn init(runtime_id: u64) MoveActorDeltaPacket {
         return .{
@@ -67,7 +66,6 @@ pub const MoveActorDeltaPacket = struct {
         try stream.writeBool(self.force_move);
         try stream.writeBool(self.force_move_local_entity);
         try stream.writeBool(self.force_completion);
-        try stream.writeVarLong(self.ticks);
 
         return stream.getBuffer();
     }
@@ -85,7 +83,6 @@ pub const MoveActorDeltaPacket = struct {
         const force_move = try stream.readBool();
         const force_move_local_entity = try stream.readBool();
         const force_completion = try stream.readBool();
-        const ticks: u64 = @intCast(try stream.readVarLong());
 
         return MoveActorDeltaPacket{
             .runtime_id = runtime_id,
@@ -99,7 +96,6 @@ pub const MoveActorDeltaPacket = struct {
             .force_move = force_move,
             .force_move_local_entity = force_move_local_entity,
             .force_completion = force_completion,
-            .ticks = ticks,
         };
     }
 };

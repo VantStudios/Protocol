@@ -1,7 +1,9 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
-const FullContainerName = @import("full-container-name.zig").FullContainerName;
+
 pub const StackRequestActionType = @import("../enums/stack-request-action-type.zig").StackRequestActionType;
+const FullContainerName = @import("full-container-name.zig").FullContainerName;
 
 pub const StackRequestSlotInfo = struct {
     container: FullContainerName,
@@ -129,6 +131,15 @@ pub const ItemStackRequest = struct {
             .filter_strings = filter_strings,
             .filter_cause = filter_cause,
         };
+    }
+
+    pub fn write(_: *BinaryStream, _: ItemStackRequest) !void {
+        return error.UnsupportedItemStackRequestWrite;
+    }
+
+    pub fn deinit(self: *ItemStackRequest, allocator: std.mem.Allocator) void {
+        allocator.free(self.actions);
+        allocator.free(self.filter_strings);
     }
 };
 

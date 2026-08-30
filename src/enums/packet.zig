@@ -56,6 +56,7 @@ pub const Packet = struct {
     pub const PlayerList = 0x3f;
     pub const LegacyTelemetryEvent = 0x41;
     pub const ClientBoundMapItemData = 0x43;
+    pub const AnvilDamage = 0x8d;
     pub const MapInfoRequest = 0x44;
     pub const RequestChunkRadius = 0x45;
     pub const ChunkRadiusUpdate = 0x46;
@@ -149,4 +150,6 @@ pub const Packet = struct {
     pub const ServerboundDiagnosticPacket = 0x13b;
     pub const MovementEffect = 0x13e;
     pub const PlayerUpdateEntityOverrides = 0x145;
+    pub const PlayerLocation = 0x146;
+    pub const ClientboundUpdateSoundData = 0x15c;
 };

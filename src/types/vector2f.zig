@@ -28,7 +28,7 @@ pub const Vector2f = struct {
     pub fn zero() Vector2f {
         return .{
             .x = 0.0,
-            .z = 0.0,
+            .y = 0.0,
         };
     }
 };

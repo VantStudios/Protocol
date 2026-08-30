@@ -1,17 +1,19 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
 const NBT = @import("nbt");
-const Packet = @import("../root.zig").Packet;
-const Gamemode = @import("../enums/gamemode.zig").Gamemode;
+
 const Difficulty = @import("../enums/difficulty.zig").Difficulty;
+const Gamemode = @import("../enums/gamemode.zig").Gamemode;
 const PermissionLevel = @import("../enums/permission-level.zig").PermissionLevel;
-const Vector3f = @import("../types/vector3f.zig").Vector3f;
+const Packet = @import("../root.zig").Packet;
 const BlockPosition = @import("../types/block-position.zig").BlockPosition;
-const GameRules = @import("../types/game-rules.zig").GameRules;
 const Experiments = @import("../types/experiments.zig").Experiments;
+const GameRules = @import("../types/game-rules.zig").GameRules;
 const NetworkBlockTypeDefinition = @import("../types/network-block-type-definition.zig").NetworkBlockTypeDefinition;
 const ServerTelemetryData = @import("../types/server-telemetry-data.zig").ServerTelemetryData;
 const Uuid = @import("../types/uuid.zig").Uuid;
+const Vector3f = @import("../types/vector3f.zig").Vector3f;
 
 pub const StartGamePacket = struct {
     entity_id: i64,
@@ -34,7 +36,7 @@ pub const StartGamePacket = struct {
     created_in_editor: bool,
     exported_from_editor: bool,
     day_cycle_stop_time: i32,
-    edu_offer: i32,
+    edu_offer: u32,
     edu_features: bool,
     edu_product_uuid: []const u8,
     rain_level: f32,
@@ -69,10 +71,10 @@ pub const StartGamePacket = struct {
     is_new_nether: bool,
     edu_resource_uri_button_name: []const u8,
     edu_resource_uri_link: []const u8,
-    experimental_gameplay_override: bool,
+    experimental_gameplay_override: ?bool = null,
     chat_restriction_level: u8,
     disable_player_interactions: bool,
-    server_editor_connection_policy: u32,
+    server_editor_connection_policy: i32,
     allow_anonimous_block_drops_in_editor_worlds: bool,
     level_identifier: []const u8,
     level_name: []const u8,
@@ -92,7 +94,6 @@ pub const StartGamePacket = struct {
     client_side_generation: bool,
     block_network_ids_are_hashes: bool,
     server_controlled_sounds: bool,
-    is_logging_chat: bool,
     contains_server_join_info: bool,
     server_telemetry_data: ServerTelemetryData,
 
@@ -119,7 +120,7 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.created_in_editor);
         try stream.writeBool(self.exported_from_editor);
         try stream.writeZigZag(self.day_cycle_stop_time);
-        try stream.writeZigZag(self.edu_offer);
+        try stream.writeVarInt(self.edu_offer);
         try stream.writeBool(self.edu_features);
         try stream.writeVarString(self.edu_product_uuid);
         try stream.writeFloat32(self.rain_level, .Little);
@@ -136,7 +137,7 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.experiments_previously_toggled);
         try stream.writeBool(self.bonus_chest);
         try stream.writeBool(self.map_enabled);
-        try stream.writeZigZag(@intFromEnum(self.permission_level));
+        try stream.writeByte(@intFromEnum(self.permission_level));
         try stream.writeInt32(self.server_chunk_tick_range, .Little);
         try stream.writeBool(self.has_locked_behavior_pack);
         try stream.writeBool(self.has_locked_resource_pack);
@@ -154,10 +155,15 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.is_new_nether);
         try stream.writeVarString(self.edu_resource_uri_button_name);
         try stream.writeVarString(self.edu_resource_uri_link);
-        try stream.writeBool(self.experimental_gameplay_override);
+        if (self.experimental_gameplay_override) |override| {
+            try stream.writeBool(true);
+            try stream.writeBool(override);
+        } else {
+            try stream.writeBool(false);
+        }
         try stream.writeInt8(@bitCast(self.chat_restriction_level));
         try stream.writeBool(self.disable_player_interactions);
-        try stream.writeVarInt(self.server_editor_connection_policy);
+        try stream.writeZigZag(self.server_editor_connection_policy);
         try stream.writeBool(self.allow_anonimous_block_drops_in_editor_worlds);
         try stream.writeVarString(self.level_identifier);
         try stream.writeVarString(self.level_name);
@@ -179,7 +185,6 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.client_side_generation);
         try stream.writeBool(self.block_network_ids_are_hashes);
         try stream.writeBool(self.server_controlled_sounds);
-        try stream.writeBool(self.is_logging_chat);
         try stream.writeBool(self.contains_server_join_info);
         try ServerTelemetryData.write(stream, self.server_telemetry_data);
 
@@ -209,7 +214,7 @@ pub const StartGamePacket = struct {
         const created_in_editor = try stream.readBool();
         const exported_from_editor = try stream.readBool();
         const day_cycle_stop_time = try stream.readZigZag();
-        const edu_offer = try stream.readZigZag();
+        const edu_offer = try stream.readVarInt();
         const edu_features = try stream.readBool();
         const edu_product_uuid = try stream.readVarString();
         const rain_level = try stream.readFloat32(.Little);
@@ -226,7 +231,7 @@ pub const StartGamePacket = struct {
         const experiments_previously_toggled = try stream.readBool();
         const bonus_chest = try stream.readBool();
         const map_enabled = try stream.readBool();
-        const permission_level: PermissionLevel = @enumFromInt(try stream.readZigZag());
+        const permission_level: PermissionLevel = @enumFromInt(try stream.readUint8());
         const server_chunk_tick_range = try stream.readInt32(.Little);
         const has_locked_behavior_pack = try stream.readBool();
         const has_locked_resource_pack = try stream.readBool();
@@ -244,10 +249,13 @@ pub const StartGamePacket = struct {
         const is_new_nether = try stream.readBool();
         const edu_resource_uri_button_name = try stream.readVarString();
         const edu_resource_uri_link = try stream.readVarString();
-        const experimental_gameplay_override = try stream.readBool();
+        const experimental_gameplay_override: ?bool = if (try stream.readBool())
+            try stream.readBool()
+        else
+            null;
         const chat_restriction_level: u8 = @bitCast(try stream.readInt8());
         const disable_player_interactions = try stream.readBool();
-        const server_editor_connection_policy = try stream.readVarInt();
+        const server_editor_connection_policy = try stream.readZigZag();
         const allow_anonimous_block_drops_in_editor_worlds = try stream.readBool();
         const level_identifier = try stream.readVarString();
         const level_name = try stream.readVarString();
@@ -269,7 +277,6 @@ pub const StartGamePacket = struct {
         const client_side_generation = try stream.readBool();
         const block_network_ids_are_hashes = try stream.readBool();
         const server_controlled_sounds = try stream.readBool();
-        const is_logging_chat = try stream.readBool();
         const contains_server_join_info = try stream.readBool();
         const server_telemetry_data = try ServerTelemetryData.read(stream);
 
@@ -352,7 +359,6 @@ pub const StartGamePacket = struct {
             .client_side_generation = client_side_generation,
             .block_network_ids_are_hashes = block_network_ids_are_hashes,
             .server_controlled_sounds = server_controlled_sounds,
-            .is_logging_chat = is_logging_chat,
             .contains_server_join_info = contains_server_join_info,
             .server_telemetry_data = server_telemetry_data,
         };

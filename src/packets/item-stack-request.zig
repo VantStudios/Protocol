@@ -12,8 +12,7 @@ pub const ItemStackRequestPacket = struct {
 
     pub fn deinit(self: *ItemStackRequestPacket, allocator: std.mem.Allocator) void {
         for (self.requests) |*req| {
-            allocator.free(req.actions);
-            allocator.free(req.filter_strings);
+            req.deinit(allocator);
         }
         allocator.free(self.requests);
     }

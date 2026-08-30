@@ -1,9 +1,11 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
-const Uuid = @import("uuid.zig").Uuid;
+
+const PlayerListAction = @import("../enums/player-list-action.zig").PlayerListAction;
 const ClientData = @import("../login/types.zig").ClientData;
 const SerializedSkin = @import("serialized-skin.zig").SerializedSkin;
-const PlayerListAction = @import("../enums/player-list-action.zig").PlayerListAction;
+const Uuid = @import("uuid.zig").Uuid;
 
 pub const PlayerListEntry = struct {
     action: PlayerListAction,
@@ -20,6 +22,7 @@ pub const PlayerListEntry = struct {
     player_color: i32 = -1,
 
     pub fn write(stream: *BinaryStream, entry: PlayerListEntry, allocator: std.mem.Allocator) !void {
+        try stream.writeVarInt(if (entry.action == .Add) @as(u32, 1) else @as(u32, 0));
         try stream.writeVarInt(@intFromEnum(entry.action));
         try Uuid.write(stream, entry.uuid);
 
