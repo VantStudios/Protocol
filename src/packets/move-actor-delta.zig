@@ -1,38 +1,54 @@
 const BinaryStream = @import("BinaryStream").BinaryStream;
-const std = @import("std");
-const MoveDeltaFlags = @import("../types/move-delta-flags.zig").MoveDeltaFlags;
 
 pub const MoveActorDeltaPacket = struct {
     runtime_id: u64,
-    flags: u16,
-    x: f32,
-    y: f32,
-    z: f32,
-    pitch: f32,
-    yaw: f32,
-    head_yaw: f32,
+    x: ?f32 = null,
+    y: ?f32 = null,
+    z: ?f32 = null,
+    rotation_x: ?i8 = null,
+    rotation_y: ?i8 = null,
+    rotation_y_head: ?i8 = null,
+    on_ground: bool = false,
+    force_move: bool = false,
+    force_move_local_entity: bool = false,
+    force_completion: bool = false,
 
     pub fn init(runtime_id: u64) MoveActorDeltaPacket {
         return .{
             .runtime_id = runtime_id,
-            .flags = MoveDeltaFlags.None,
-            .x = 0.0,
-            .y = 0.0,
-            .z = 0.0,
-            .pitch = 0.0,
-            .yaw = 0.0,
-            .head_yaw = 0.0,
         };
     }
 
-    fn writeByteFloat(stream: *BinaryStream, value: f32) !void {
-        const byte_val = @mod(value, 360.0) / (360.0 / 256.0);
-        try stream.writeUint8(@intFromFloat(@max(0.0, @min(255.0, byte_val))));
+    fn writeOptionalFloat(stream: *BinaryStream, value: ?f32) !void {
+        if (value) |v| {
+            try stream.writeBool(true);
+            try stream.writeFloat32(v, .Little);
+        } else {
+            try stream.writeBool(false);
+        }
     }
 
-    fn readByteFloat(stream: *BinaryStream) !f32 {
-        const b = try stream.readUint8();
-        return @as(f32, @floatFromInt(b)) * (360.0 / 256.0);
+    fn writeOptionalI8(stream: *BinaryStream, value: ?i8) !void {
+        if (value) |v| {
+            try stream.writeBool(true);
+            try stream.writeInt8(v);
+        } else {
+            try stream.writeBool(false);
+        }
+    }
+
+    fn readOptionalFloat(stream: *BinaryStream) !?f32 {
+        if (try stream.readBool()) {
+            return try stream.readFloat32(.Little);
+        }
+        return null;
+    }
+
+    fn readOptionalI8(stream: *BinaryStream) !?i8 {
+        if (try stream.readBool()) {
+            return try stream.readInt8();
+        }
+        return null;
     }
 
     pub fn serialize(self: *const MoveActorDeltaPacket, stream: *BinaryStream) ![]const u8 {
@@ -40,55 +56,46 @@ pub const MoveActorDeltaPacket = struct {
         try stream.writeVarInt(Packet.MoveActorDelta);
 
         try stream.writeVarLong(self.runtime_id);
-        try stream.writeUint16(self.flags, .Little);
-
-        if (MoveDeltaFlags.hasFlag(self.flags, MoveDeltaFlags.HasX)) {
-            try stream.writeFloat32(self.x, .Little);
-        }
-        if (MoveDeltaFlags.hasFlag(self.flags, MoveDeltaFlags.HasY)) {
-            try stream.writeFloat32(self.y, .Little);
-        }
-        if (MoveDeltaFlags.hasFlag(self.flags, MoveDeltaFlags.HasZ)) {
-            try stream.writeFloat32(self.z, .Little);
-        }
-        if (MoveDeltaFlags.hasFlag(self.flags, MoveDeltaFlags.HasRotX)) {
-            try writeByteFloat(stream, if (!std.math.isInf(self.pitch)) self.pitch else 0.0);
-        }
-        if (MoveDeltaFlags.hasFlag(self.flags, MoveDeltaFlags.HasRotY)) {
-            try writeByteFloat(stream, if (!std.math.isInf(self.yaw)) self.yaw else 0.0);
-        }
-        if (MoveDeltaFlags.hasFlag(self.flags, MoveDeltaFlags.HasRotZ)) {
-            try writeByteFloat(stream, if (!std.math.isInf(self.yaw)) self.yaw else 0.0);
-        }
+        try writeOptionalFloat(stream, self.x);
+        try writeOptionalFloat(stream, self.y);
+        try writeOptionalFloat(stream, self.z);
+        try writeOptionalI8(stream, self.rotation_x);
+        try writeOptionalI8(stream, self.rotation_y);
+        try writeOptionalI8(stream, self.rotation_y_head);
+        try stream.writeBool(self.on_ground);
+        try stream.writeBool(self.force_move);
+        try stream.writeBool(self.force_move_local_entity);
+        try stream.writeBool(self.force_completion);
 
         return stream.getBuffer();
     }
 
     pub fn deserialize(stream: *BinaryStream) !MoveActorDeltaPacket {
         _ = try stream.readVarInt();
-        const raw_id: u64 = @intCast(try stream.readVarLong());
-        var packet = MoveActorDeltaPacket.init(raw_id);
-        packet.flags = try stream.readUint16(.Little);
+        const runtime_id: u64 = @intCast(try stream.readVarLong());
+        const x = try readOptionalFloat(stream);
+        const y = try readOptionalFloat(stream);
+        const z = try readOptionalFloat(stream);
+        const rotation_x = try readOptionalI8(stream);
+        const rotation_y = try readOptionalI8(stream);
+        const rotation_y_head = try readOptionalI8(stream);
+        const on_ground = try stream.readBool();
+        const force_move = try stream.readBool();
+        const force_move_local_entity = try stream.readBool();
+        const force_completion = try stream.readBool();
 
-        if (MoveDeltaFlags.hasFlag(packet.flags, MoveDeltaFlags.HasX)) {
-            packet.x = try stream.readFloat32(.Little);
-        }
-        if (MoveDeltaFlags.hasFlag(packet.flags, MoveDeltaFlags.HasY)) {
-            packet.y = try stream.readFloat32(.Little);
-        }
-        if (MoveDeltaFlags.hasFlag(packet.flags, MoveDeltaFlags.HasZ)) {
-            packet.z = try stream.readFloat32(.Little);
-        }
-        if (MoveDeltaFlags.hasFlag(packet.flags, MoveDeltaFlags.HasRotX)) {
-            packet.pitch = try readByteFloat(stream);
-        }
-        if (MoveDeltaFlags.hasFlag(packet.flags, MoveDeltaFlags.HasRotY)) {
-            packet.yaw = try readByteFloat(stream);
-        }
-        if (MoveDeltaFlags.hasFlag(packet.flags, MoveDeltaFlags.HasRotZ)) {
-            packet.head_yaw = try readByteFloat(stream);
-        }
-
-        return packet;
+        return MoveActorDeltaPacket{
+            .runtime_id = runtime_id,
+            .x = x,
+            .y = y,
+            .z = z,
+            .rotation_x = rotation_x,
+            .rotation_y = rotation_y,
+            .rotation_y_head = rotation_y_head,
+            .on_ground = on_ground,
+            .force_move = force_move,
+            .force_move_local_entity = force_move_local_entity,
+            .force_completion = force_completion,
+        };
     }
 };

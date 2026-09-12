@@ -40,7 +40,7 @@ pub const GameRules = struct {
 
             const value: GameRuleValue = switch (rule_type) {
                 .Bool => .{ .Bool = try stream.readBool() },
-                .Int => .{ .Int = try stream.readZigZag() },
+                .Int => .{ .Int = try stream.readInt32(.Little) },
                 .Float => .{ .Float = try stream.readFloat32(.Little) },
             };
 
@@ -65,7 +65,7 @@ pub const GameRules = struct {
 
             switch (rule.value) {
                 .Bool => |val| try stream.writeBool(val),
-                .Int => |val| try stream.writeZigZag(val),
+                .Int => |val| try stream.writeInt32(val, .Little),
                 .Float => |val| try stream.writeFloat32(val, .Little),
             }
         }

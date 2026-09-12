@@ -1,14 +1,16 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const ItemInstanceUserData = @import("item-instance-user-data.zig").ItemInstanceUserData;
 
 pub const NetworkItemStackDescriptor = struct {
     network: i32,
-    stack_size: ?u16,
-    metadata: ?u32,
-    item_stack_id: ?i32,
-    network_block_id: ?i32,
-    extras: ?ItemInstanceUserData,
+    stack_size: ?u16 = null,
+    metadata: ?u32 = null,
+    item_stack_id: ?i32 = null,
+    network_block_id: ?i32 = null,
+    extras: ?ItemInstanceUserData = null,
 
     pub fn deinit(self: *NetworkItemStackDescriptor, allocator: std.mem.Allocator) void {
         if (self.extras) |*extras| extras.deinit(allocator);
@@ -30,7 +32,7 @@ pub const NetworkItemStackDescriptor = struct {
         _ = try stream.readUint16(.Little);
         _ = try stream.readVarInt();
         if (try stream.readBool()) _ = try stream.readZigZag();
-        _ = try stream.readZigZag();
+        _ = try stream.readVarInt();
         const length = try stream.readVarInt();
         stream.offset += length;
     }
@@ -79,10 +81,9 @@ pub const NetworkItemStackDescriptor = struct {
         const hasNetId = try stream.readBool();
         var item_stack_id: ?i32 = null;
         if (hasNetId) {
-            _ = try stream.readVarInt();
             item_stack_id = try stream.readZigZag();
         }
-        const network_block_id = try stream.readZigZag();
+        const network_block_id: i32 = @bitCast(try stream.readVarInt());
 
         const length = try stream.readVarInt();
         const extras: ?ItemInstanceUserData = if (length > 0) blk: {
@@ -149,13 +150,12 @@ pub const NetworkItemStackDescriptor = struct {
 
         if (value.item_stack_id) |id| {
             try stream.writeBool(true);
-            try stream.writeVarInt(0);
             try stream.writeZigZag(id);
         } else {
             try stream.writeBool(false);
         }
 
-        try stream.writeZigZag(value.network_block_id orelse 0);
+        try stream.writeVarInt(@bitCast(value.network_block_id orelse 0));
 
         if (value.extras) |extras| {
             var sub = BinaryStream.init(allocator, null, null);

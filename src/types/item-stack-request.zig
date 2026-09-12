@@ -1,7 +1,9 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
-const FullContainerName = @import("full-container-name.zig").FullContainerName;
+
 pub const StackRequestActionType = @import("../enums/stack-request-action-type.zig").StackRequestActionType;
+const FullContainerName = @import("full-container-name.zig").FullContainerName;
 
 pub const StackRequestSlotInfo = struct {
     container: FullContainerName,
@@ -56,8 +58,8 @@ pub const CraftRecipeOptionalAction = struct {
     filter_string_index: i32,
 };
 
-pub const CraftGrindstoneAction = struct {
-    recipe_network_id: u32,
+pub const CraftRepairAndDisenchantAction = struct {
+    recipe_network_id: i32,
     number_of_crafts: u8,
     cost: i32,
 };
@@ -65,6 +67,10 @@ pub const CraftGrindstoneAction = struct {
 pub const CraftLoomAction = struct {
     pattern: []const u8,
     times_crafted: u8,
+};
+
+pub const CraftResultsDeprecatedAction = struct {
+    number_of_crafts: u8,
 };
 
 pub const StackRequestAction = union(enum) {
@@ -75,8 +81,6 @@ pub const StackRequestAction = union(enum) {
     destroy: DestroyAction,
     consume: DestroyAction,
     create: CreateAction,
-    place_in_container: TransferAction,
-    take_out_container: TransferAction,
     lab_table_combine: void,
     beacon_payment: BeaconPaymentAction,
     mine_block: MineBlockAction,
@@ -84,10 +88,10 @@ pub const StackRequestAction = union(enum) {
     craft_recipe_auto: CraftRecipeAction,
     craft_creative: CraftCreativeAction,
     craft_recipe_optional: CraftRecipeOptionalAction,
-    craft_grindstone: CraftGrindstoneAction,
+    craft_repair_and_disenchant: CraftRepairAndDisenchantAction,
     craft_loom: CraftLoomAction,
     craft_non_implemented_deprecated: void,
-    craft_results_deprecated: void,
+    craft_results_deprecated: CraftResultsDeprecatedAction,
     unknown: void,
 };
 
@@ -130,12 +134,21 @@ pub const ItemStackRequest = struct {
             .filter_cause = filter_cause,
         };
     }
+
+    pub fn write(_: *BinaryStream, _: ItemStackRequest) !void {
+        return error.UnsupportedItemStackRequestWrite;
+    }
+
+    pub fn deinit(self: *ItemStackRequest, allocator: std.mem.Allocator) void {
+        allocator.free(self.actions);
+        allocator.free(self.filter_strings);
+    }
 };
 
 fn readSlotInfo(stream: *BinaryStream) !StackRequestSlotInfo {
     const container = try FullContainerName.read(stream);
     const slot = try stream.readUint8();
-    const stack_network_id = try stream.readZigZag();
+    const stack_network_id = try stream.readInt32(.Little);
     return .{ .container = container, .slot = slot, .stack_network_id = stack_network_id };
 }
 
@@ -147,7 +160,12 @@ fn readTransferAction(stream: *BinaryStream) !TransferAction {
 }
 
 fn readAction(stream: *BinaryStream) !StackRequestAction {
-    const action_type: StackRequestActionType = @enumFromInt(try stream.readUint8());
+    const raw_type = try stream.readVarInt();
+    const action_type: StackRequestActionType = std.enums.fromInt(StackRequestActionType, raw_type) orelse {
+        return error.UnknownStackRequestActionType;
+    };
+    // The wire repeats the action type as a single byte before the payload.
+    _ = try stream.readUint8();
     return switch (action_type) {
         .Take => .{ .take = try readTransferAction(stream) },
         .Place => .{ .place = try readTransferAction(stream) },
@@ -173,8 +191,6 @@ fn readAction(stream: *BinaryStream) !StackRequestAction {
             return .{ .consume = .{ .count = count, .source = source } };
         },
         .Create => .{ .create = .{ .results_slot = try stream.readUint8() } },
-        .PlaceInContainer => .{ .place_in_container = try readTransferAction(stream) },
-        .TakeOutContainer => .{ .take_out_container = try readTransferAction(stream) },
         .LabTableCombine => .{ .lab_table_combine = {} },
         .BeaconPayment => .{ .beacon_payment = .{
             .primary_effect = try stream.readZigZag(),
@@ -183,7 +199,7 @@ fn readAction(stream: *BinaryStream) !StackRequestAction {
         .MineBlock => .{ .mine_block = .{
             .hotbar_slot = try stream.readZigZag(),
             .predicted_durability = try stream.readZigZag(),
-            .stack_network_id = try stream.readZigZag(),
+            .stack_network_id = try stream.readInt32(.Little),
         } },
         .CraftRecipe => .{ .craft_recipe = .{
             .recipe_network_id = try stream.readVarInt(),
@@ -192,9 +208,8 @@ fn readAction(stream: *BinaryStream) !StackRequestAction {
         .CraftRecipeAuto => blk: {
             const rid = try stream.readVarInt();
             const nc = try stream.readUint8();
-            _ = try stream.readUint8();
             const ic = try stream.readVarInt();
-            for (0..ic) |_| try skipItemDescriptorCount(stream);
+            for (0..ic) |_| try skipIngredient(stream);
             break :blk .{ .craft_recipe_auto = .{ .recipe_network_id = rid, .number_of_crafts = nc } };
         },
         .CraftCreative => .{ .craft_creative = .{
@@ -205,8 +220,8 @@ fn readAction(stream: *BinaryStream) !StackRequestAction {
             .recipe_network_id = try stream.readVarInt(),
             .filter_string_index = try stream.readInt32(.Little),
         } },
-        .CraftGrindstone => .{ .craft_grindstone = .{
-            .recipe_network_id = try stream.readVarInt(),
+        .CraftRepairAndDisenchant => .{ .craft_repair_and_disenchant = .{
+            .recipe_network_id = try stream.readInt32(.Little),
             .number_of_crafts = try stream.readUint8(),
             .cost = try stream.readZigZag(),
         } },
@@ -216,68 +231,75 @@ fn readAction(stream: *BinaryStream) !StackRequestAction {
         } },
         .CraftNonImplementedDeprecated => .{ .craft_non_implemented_deprecated = {} },
         .CraftResultsDeprecated => blk: {
-            const c = try stream.readVarInt();
-            for (0..c) |_| try skipItemStack(stream);
-            _ = try stream.readUint8();
-            break :blk .{ .craft_results_deprecated = {} };
+            const ic = try stream.readVarInt();
+            for (0..ic) |_| try skipRequestItemInstance(stream);
+            break :blk .{ .craft_results_deprecated = .{ .number_of_crafts = try stream.readUint8() } };
         },
         _ => .{ .unknown = {} },
     };
 }
 
 fn skipAction(stream: *BinaryStream) !void {
-    const action_type = try stream.readUint8();
-    switch (action_type) {
-        0, 1, 7, 8 => try skipTransferAction(stream),
+    const raw_type = try stream.readVarInt();
+    // The wire repeats the action type as a single byte before the payload.
+    _ = try stream.readUint8();
+    switch (raw_type) {
+        0, 1 => {
+            _ = try stream.readUint8();
+            try skipSlotInfo(stream);
+            try skipSlotInfo(stream);
+        },
         2 => {
             try skipSlotInfo(stream);
             try skipSlotInfo(stream);
         },
-        3 => try skipDropAction(stream),
-        4, 5 => try skipDestroyAction(stream),
+        3 => {
+            _ = try stream.readUint8();
+            try skipSlotInfo(stream);
+            _ = try stream.readBool();
+        },
+        4, 5 => {
+            _ = try stream.readUint8();
+            try skipSlotInfo(stream);
+        },
         6 => _ = try stream.readUint8(),
-        9 => {},
-        10 => {
+        7 => {},
+        8 => {
             _ = try stream.readZigZag();
             _ = try stream.readZigZag();
         },
-        11 => {
+        9 => {
             _ = try stream.readZigZag();
             _ = try stream.readZigZag();
-            _ = try stream.readZigZag();
+            _ = try stream.readInt32(.Little);
         },
-        12 => {
+        10, 12 => {
             _ = try stream.readVarInt();
             _ = try stream.readUint8();
+        },
+        11 => {
+            _ = try stream.readVarInt();
+            _ = try stream.readUint8();
+            const ic = try stream.readVarInt();
+            for (0..ic) |_| try skipIngredient(stream);
         },
         13 => {
             _ = try stream.readVarInt();
-            _ = try stream.readUint8();
-            _ = try stream.readUint8();
-            const c = try stream.readVarInt();
-            for (0..c) |_| try skipItemDescriptorCount(stream);
-        },
-        14 => {
-            _ = try stream.readVarInt();
-            _ = try stream.readUint8();
-        },
-        15 => {
-            _ = try stream.readVarInt();
             _ = try stream.readInt32(.Little);
         },
-        16 => {
-            _ = try stream.readVarInt();
+        14 => {
+            _ = try stream.readInt32(.Little);
             _ = try stream.readUint8();
             _ = try stream.readZigZag();
         },
-        17 => {
+        15 => {
             _ = try stream.readVarString();
             _ = try stream.readUint8();
         },
-        18 => {},
-        19 => {
-            const c = try stream.readVarInt();
-            for (0..c) |_| try skipItemStack(stream);
+        16 => {},
+        17 => {
+            const ic = try stream.readVarInt();
+            for (0..ic) |_| try skipRequestItemInstance(stream);
             _ = try stream.readUint8();
         },
         else => {},
@@ -285,57 +307,48 @@ fn skipAction(stream: *BinaryStream) !void {
 }
 
 fn skipSlotInfo(stream: *BinaryStream) !void {
-    _ = try FullContainerName.read(stream);
+    _ = FullContainerName.read(stream) catch {
+        // Consume the optional dynamic id even if the identifier is unknown
+        // so the caller can keep skipping from a sane position.
+        if (try stream.readBool()) _ = try stream.readUint32(.Little);
+        return error.UnknownContainerName;
+    };
     _ = try stream.readUint8();
-    _ = try stream.readZigZag();
+    _ = try stream.readInt32(.Little);
 }
 
-fn skipTransferAction(stream: *BinaryStream) !void {
+fn skipIngredient(stream: *BinaryStream) !void {
+    const descriptor_type = try stream.readVarInt();
     _ = try stream.readUint8();
-    try skipSlotInfo(stream);
-    try skipSlotInfo(stream);
-}
-
-fn skipDropAction(stream: *BinaryStream) !void {
-    _ = try stream.readUint8();
-    try skipSlotInfo(stream);
-    _ = try stream.readBool();
-}
-
-fn skipDestroyAction(stream: *BinaryStream) !void {
-    _ = try stream.readUint8();
-    try skipSlotInfo(stream);
-}
-
-fn skipItemDescriptorCount(stream: *BinaryStream) !void {
-    const dt = try stream.readUint8();
-    switch (dt) {
+    switch (descriptor_type) {
         0 => {},
         1 => {
-            _ = try stream.readInt16(.Little);
-            _ = try stream.readInt16(.Little);
+            _ = try stream.readVarString();
+            _ = try stream.readZigZag();
         },
         2 => {
             _ = try stream.readVarString();
             _ = try stream.readInt16(.Little);
         },
-        3, 4 => _ = try stream.readVarString(),
-        5 => {
+        3 => {
             _ = try stream.readVarString();
-            _ = try stream.readUint8();
         },
-        6 => _ = try stream.readZigZag(),
         else => {},
     }
-    _ = try stream.readZigZag();
+    _ = try stream.readUint16(.Little);
 }
 
-fn skipItemStack(stream: *BinaryStream) !void {
-    const nid = try stream.readZigZag();
-    if (nid == 0) return;
-    _ = try stream.readUint16(.Little);
+fn skipRequestItemInstance(stream: *BinaryStream) !void {
+    const descriptor_type = try stream.readVarInt();
+    _ = try stream.readUint8();
+    if (descriptor_type != 0) {
+        _ = try stream.readVarString();
+        _ = try stream.readZigZag();
+    }
+    _ = try stream.readInt16(.Little);
     _ = try stream.readVarInt();
-    _ = try stream.readZigZag();
-    const el = try stream.readVarInt();
-    for (0..el) |_| _ = try stream.readUint8();
+    const extra_length = try stream.readVarInt();
+    for (0..extra_length) |_| {
+        _ = try stream.readUint8();
+    }
 }

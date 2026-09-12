@@ -126,4 +126,5 @@ pub const ActorFlags = enum(u8) {
     BodyRotationAlwaysFollowsHead = 124,
     CanUseVerticalMovementAction = 125,
     RotationLockedToVehicle = 126,
+    NotPickableFromInside = 127,
 };

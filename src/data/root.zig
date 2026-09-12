@@ -6,6 +6,7 @@ pub const block_states_json = @embedFile("json/block_states.json");
 pub const block_drops_json = @embedFile("json/block_drops.json");
 pub const block_metadata_json = @embedFile("json/block_metadata.json");
 pub const biome_types_json = @embedFile("json/biome_types.json");
+pub const biome_definitions_vanilla_json = @embedFile("json/biome_definitions_vanilla.json");
 pub const entity_types_json = @embedFile("json/entity_types.json");
 pub const item_types_json = @embedFile("json/item_types.json");
 pub const item_metadata_json = @embedFile("json/item_metadata.json");

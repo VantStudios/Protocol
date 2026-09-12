@@ -6,6 +6,7 @@ const Rotation = @import("../types/rotation.zig").Rotation;
 const DataItem = @import("../types/data-item.zig").DataItem;
 const PropertySyncData = @import("../types/property-sync-data.zig").PropertySyncData;
 const AbilityLayer = @import("../types/ability-layer.zig").AbilityLayer;
+const NetworkItemStackDescriptor = @import("../types/network-item-stack-descriptor.zig").NetworkItemStackDescriptor;
 
 pub const AddPlayerPacket = struct {
     uuid: []const u8,
@@ -15,6 +16,7 @@ pub const AddPlayerPacket = struct {
     position: Vector3f,
     velocity: Vector3f = Vector3f.init(0, 0, 0),
     rotation: Rotation = Rotation.init(0, 0, 0),
+    carried_item: NetworkItemStackDescriptor = .{ .network = 0 },
     game_type: i32 = 1,
     entity_metadata: []const DataItem = &[_]DataItem{},
     entity_properties: PropertySyncData,
@@ -33,8 +35,11 @@ pub const AddPlayerPacket = struct {
         try stream.writeVarString(self.platform_chat_id);
         try Vector3f.write(stream, self.position);
         try Vector3f.write(stream, self.velocity);
-        try Rotation.write(stream, self.rotation);
-        try stream.writeZigZag(0);
+        try stream.writeFloat32(self.rotation.pitch, .Little);
+        try stream.writeFloat32(self.rotation.yaw, .Little);
+        try stream.writeFloat32(self.rotation.head_yaw, .Little);
+
+        try NetworkItemStackDescriptor.writeShort(stream, self.carried_item, stream.allocator);
         try stream.writeZigZag(self.game_type);
 
         try stream.writeVarInt(@intCast(self.entity_metadata.len));

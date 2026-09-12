@@ -12,7 +12,7 @@ pub const CreativeGroup = struct {
         const amount = try stream.readVarInt();
         const groups = try allocator.alloc(CreativeGroup, amount);
         for (0..amount) |i| {
-            const category: CreativeItemCategory = @enumFromInt(try stream.readInt32(.Little));
+            const category: CreativeItemCategory = @enumFromInt(try stream.readUint8());
             const name = try stream.readVarString();
             const icon = try NetworkItemInstanceDescriptor.read(stream, allocator);
             groups[i] = .{ .category = category, .name = name, .icon = icon };
@@ -23,7 +23,7 @@ pub const CreativeGroup = struct {
     pub fn write(stream: *BinaryStream, values: []const CreativeGroup, allocator: std.mem.Allocator) !void {
         try stream.writeVarInt(@intCast(values.len));
         for (values) |group| {
-            try stream.writeInt32(@intFromEnum(group.category), .Little);
+            try stream.writeUint8(@intFromEnum(group.category));
             try stream.writeVarString(group.name);
             try NetworkItemInstanceDescriptor.write(stream, group.icon, allocator);
         }

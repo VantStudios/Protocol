@@ -1,5 +1,7 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const Uuid = @import("uuid.zig").Uuid;
 
 pub const ResourcePackDescriptor = struct {
@@ -41,7 +43,7 @@ pub const ResourcePackDescriptor = struct {
     }
 
     pub fn read(stream: *BinaryStream) ![]ResourcePackDescriptor {
-        const amount = try stream.readInt16(.Little);
+        const amount = try stream.readVarInt();
         const packs = try stream.allocator.alloc(ResourcePackDescriptor, @intCast(amount));
 
         for (0..@intCast(amount)) |i| {
@@ -74,7 +76,7 @@ pub const ResourcePackDescriptor = struct {
     }
 
     pub fn write(stream: *BinaryStream, packs: []const ResourcePackDescriptor) !void {
-        try stream.writeInt16(@intCast(packs.len), .Little);
+        try stream.writeVarInt(@intCast(packs.len));
 
         for (packs) |pack| {
             try Uuid.write(stream, pack.uuid);

@@ -102,9 +102,9 @@ pub const PersonaPiece = struct {
     product_id: []const u8,
 };
 
-pub const PersonaPieceTintColour = struct {
+pub const PersonaPieceTintColor = struct {
     piece_type: []const u8,
-    colours: [4][]const u8,
+    colors: [4][]const u8,
 };
 
 pub const ClientData = struct {
@@ -127,12 +127,13 @@ pub const ClientData = struct {
     premium_skin: bool,
     cape_on_classic_skin: bool,
     trusted_skin: bool,
+    profile_hash: []const u8 = "",
     arm_size: []const u8,
     skin_color: []const u8,
 
     animated_image_data: []const SkinAnimation,
     persona_pieces: []const PersonaPiece,
-    piece_tint_colours: []const PersonaPieceTintColour,
+    piece_tint_colors: []const PersonaPieceTintColor,
 
     device_model: []const u8,
     device_os: i64,
@@ -227,26 +228,26 @@ pub const ClientData = struct {
             break :blk pieces;
         };
 
-        const piece_tint_colours = blk: {
-            const arr_val = obj.get("PieceTintColors") orelse break :blk &[0]PersonaPieceTintColour{};
-            if (arr_val != .array) break :blk &[0]PersonaPieceTintColour{};
+        const piece_tint_color = blk: {
+            const arr_val = obj.get("PieceTintColors") orelse break :blk &[0]PersonaPieceTintColor{};
+            if (arr_val != .array) break :blk &[0]PersonaPieceTintColor{};
             const arr = arr_val.array;
-            if (arr.items.len == 0) break :blk &[0]PersonaPieceTintColour{};
-            const tints = try allocator.alloc(PersonaPieceTintColour, arr.items.len);
+            if (arr.items.len == 0) break :blk &[0]PersonaPieceTintColor{};
+            const tints = try allocator.alloc(PersonaPieceTintColor, arr.items.len);
             for (arr.items, 0..) |item, i| {
                 const t = item.object;
-                var colours: [4][]const u8 = .{ "", "", "", "" };
+                var colors: [4][]const u8 = .{ "", "", "", "" };
                 if (t.get("Colors")) |cv| {
                     if (cv == .array) {
                         for (cv.array.items, 0..) |c, ci| {
                             if (ci >= 4) break;
-                            colours[ci] = try allocator.dupe(u8, c.string);
+                            colors[ci] = try allocator.dupe(u8, c.string);
                         }
                     }
                 }
                 tints[i] = .{
                     .piece_type = if (t.get("PieceType")) |v| try allocator.dupe(u8, v.string) else "",
-                    .colours = colours,
+                    .colors = colors,
                 };
             }
             break :blk tints;
@@ -277,7 +278,7 @@ pub const ClientData = struct {
 
             .animated_image_data = animated_image_data,
             .persona_pieces = persona_pieces,
-            .piece_tint_colours = piece_tint_colours,
+            .piece_tint_colors = piece_tint_color,
 
             .device_model = try getString(obj, "DeviceModel", allocator),
             .device_os = getInt(obj, "DeviceOS"),
@@ -311,13 +312,13 @@ pub const ClientData = struct {
         }
         if (self.persona_pieces.len > 0) allocator.free(self.persona_pieces);
 
-        for (self.piece_tint_colours) |tint| {
+        for (self.piece_tint_colors) |tint| {
             if (tint.piece_type.len > 0) allocator.free(tint.piece_type);
-            for (tint.colours) |c| {
+            for (tint.colors) |c| {
                 if (c.len > 0) allocator.free(c);
             }
         }
-        if (self.piece_tint_colours.len > 0) allocator.free(self.piece_tint_colours);
+        if (self.piece_tint_colors.len > 0) allocator.free(self.piece_tint_colors);
 
         inline for (@typeInfo(ClientData).@"struct".fields) |field| {
             if (field.type == []const u8) {

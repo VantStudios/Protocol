@@ -9,8 +9,8 @@ pub const LevelChunk = struct {
     x: i32,
     z: i32,
     dimension: DimensionType,
-    highest_sub_chunk_count: u16,
-    sub_chunk_count: i32,
+    sub_chunk_count: u32,
+    client_request_subchunk_limit: ?i32 = null,
     cache_enabled: bool,
     blobs: []const u64,
     data: []const u8,
@@ -20,22 +20,20 @@ pub const LevelChunk = struct {
         try stream.writeZigZag(self.x);
         try stream.writeZigZag(self.z);
         try stream.writeZigZag(@intFromEnum(self.dimension));
-        try stream.writeVarInt(@intCast(self.sub_chunk_count));
+        try stream.writeVarInt(self.sub_chunk_count);
 
-        if (self.sub_chunk_count == -2) {
-            try stream.writeUint16(self.highest_sub_chunk_count, .Little);
+        if (self.client_request_subchunk_limit) |limit| {
+            try stream.writeBool(true);
+            try stream.writeZigZag(limit);
+        } else {
+            try stream.writeBool(false);
         }
 
         try stream.writeBool(self.cache_enabled);
 
-        if (self.cache_enabled) {
-            if (self.blobs.len == 0) {
-                return error.BlobsRequiredWhenCacheEnabled;
-            }
-            try stream.writeVarInt(@intCast(self.blobs.len));
-            for (self.blobs) |hash| {
-                try stream.writeUint64(hash, .Little);
-            }
+        try stream.writeVarInt(@intCast(self.blobs.len));
+        for (self.blobs) |hash| {
+            try stream.writeUint64(hash, .Little);
         }
 
         try stream.writeVarInt(@intCast(self.data.len));
@@ -51,41 +49,37 @@ pub const LevelChunk = struct {
         const dimension_raw = try stream.readZigZag();
         const dimension: DimensionType = @enumFromInt(dimension_raw);
 
-        var sub_chunk_count = try stream.readVarInt();
-        if (sub_chunk_count == 4_294_967_294) {
-            sub_chunk_count = -2;
-        }
+        const sub_chunk_count = try stream.readVarInt();
 
-        var highest_sub_chunk_count: u16 = 0;
-        if (sub_chunk_count == -2) {
-            highest_sub_chunk_count = try stream.readUint16(.Little);
+        var client_request_limit: ?i32 = null;
+        if (try stream.readBool()) {
+            client_request_limit = try stream.readZigZag();
         }
 
         const cache_enabled = try stream.readBool();
 
         var blobs: []const u64 = &[_]u64{};
-        if (cache_enabled) {
-            const blobCount = try stream.readVarInt();
-            if (blobCount > MAX_BLOB_HASHES) {
-                return error.TooManyBlobHashes;
-            }
-
-            const blob_array = try stream.allocator.alloc(u64, @intCast(blobCount));
-            for (0..@intCast(blobCount)) |i| {
+        const blob_count = try stream.readVarInt();
+        if (blob_count > MAX_BLOB_HASHES) {
+            return error.TooManyBlobHashes;
+        }
+        if (blob_count > 0) {
+            const blob_array = try stream.allocator.alloc(u64, @intCast(blob_count));
+            for (0..@intCast(blob_count)) |i| {
                 blob_array[i] = try stream.readUint64(.Little);
             }
             blobs = blob_array;
         }
 
-        const dataLength = try stream.readVarInt();
-        const data = stream.read(@intCast(dataLength));
+        const data_length = try stream.readVarInt();
+        const data = stream.read(@intCast(data_length));
 
         return LevelChunk{
             .x = x,
             .z = z,
             .dimension = dimension,
-            .highest_sub_chunk_count = highest_sub_chunk_count,
             .sub_chunk_count = sub_chunk_count,
+            .client_request_subchunk_limit = client_request_limit,
             .cache_enabled = cache_enabled,
             .blobs = blobs,
             .data = data,

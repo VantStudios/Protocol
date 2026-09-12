@@ -1,49 +1,59 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const BlockPosition = @import("block-position.zig").BlockPosition;
 const Vector3f = @import("vector3f.zig").Vector3f;
+const NetworkItemStackDescriptor = @import("network-item-stack-descriptor.zig").NetworkItemStackDescriptor;
 
 pub const ItemUseTransaction = struct {
     legacy_request_id: i32,
-    action_type: u32,
+    action_type: i32,
     trigger_type: u32,
     block_position: BlockPosition,
     block_face: i32,
     hot_bar_slot: i32,
+    item_in_hand: NetworkItemStackDescriptor,
     position: Vector3f,
     clicked_position: Vector3f,
     block_runtime_id: u32,
     client_prediction: u32,
+    client_cooldown_state: u8 = 0,
 
-    pub fn read(stream: *BinaryStream) !ItemUseTransaction {
+    pub fn read(stream: *BinaryStream, allocator: std.mem.Allocator) !ItemUseTransaction {
         const legacy_request_id = try stream.readZigZag();
 
-        if (legacy_request_id < -1 and (@as(u32, @bitCast(legacy_request_id)) & 1) == 0) {
-            const slot_count = try stream.readVarInt();
-            for (0..slot_count) |_| {
-                _ = try stream.readUint8();
-                const byte_count = try stream.readVarInt();
-                for (0..byte_count) |_| {
+        if (try stream.readBool()) {
+            if (legacy_request_id < -1 and (@as(u32, @bitCast(legacy_request_id)) & 1) == 0) {
+                const slot_count = try stream.readVarInt();
+                for (0..slot_count) |_| {
                     _ = try stream.readUint8();
+                    const byte_count = try stream.readVarInt();
+                    for (0..byte_count) |_| {
+                        _ = try stream.readUint8();
+                    }
                 }
             }
         }
 
-        const action_count = try stream.readVarInt();
-        for (0..action_count) |_| {
-            try skipInventoryAction(stream);
+        if ((try stream.readBool()) and (try stream.readBool())) {
+            const action_count = try stream.readVarInt();
+            for (0..action_count) |_| {
+                try skipInventoryAction(stream);
+            }
         }
 
-        const action_type = try stream.readVarInt();
-        const trigger_type = try stream.readVarInt();
+        const action_type = try stream.readZigZag();
+        const trigger_type = try stream.readUint8();
         const block_position = try BlockPosition.read(stream);
-        const block_face = try stream.readZigZag();
+        const block_face = try stream.readUint8();
         const hot_bar_slot = try stream.readZigZag();
-        try skipItemInstance(stream);
+        const item_in_hand = try NetworkItemStackDescriptor.readShort(stream, allocator);
         const position = try Vector3f.read(stream);
         const clicked_position = try Vector3f.read(stream);
         const block_runtime_id = try stream.readVarInt();
-        const client_prediction = try stream.readVarInt();
+        const client_prediction = try stream.readUint8();
+        const client_cooldown_state = try stream.readUint8();
 
         return .{
             .legacy_request_id = legacy_request_id,
@@ -52,148 +62,62 @@ pub const ItemUseTransaction = struct {
             .block_position = block_position,
             .block_face = block_face,
             .hot_bar_slot = hot_bar_slot,
+            .item_in_hand = item_in_hand,
             .position = position,
             .clicked_position = clicked_position,
             .block_runtime_id = block_runtime_id,
             .client_prediction = client_prediction,
+            .client_cooldown_state = client_cooldown_state,
         };
+    }
+
+    pub fn write(self: ItemUseTransaction, stream: *BinaryStream, allocator: std.mem.Allocator) !void {
+        try stream.writeZigZag(self.legacy_request_id);
+
+        if (self.legacy_request_id < -1 and (@as(u32, @bitCast(self.legacy_request_id)) & 1) == 0) {
+            try stream.writeBool(true);
+            // Legacy changed-slots are not tracked in this struct; the client
+            // re-derives them from its own inventory state.
+            try stream.writeVarInt(0);
+        } else {
+            try stream.writeBool(false);
+        }
+
+        try stream.writeBool(true);
+        try stream.writeBool(true);
+        try stream.writeVarInt(0);
+
+        try stream.writeZigZag(self.action_type);
+        try stream.writeUint8(@intCast(self.trigger_type & 0xFF));
+        try BlockPosition.write(stream, self.block_position);
+        try stream.writeUint8(@intCast(self.block_face & 0xFF));
+        try stream.writeZigZag(self.hot_bar_slot);
+        try NetworkItemStackDescriptor.writeShort(stream, self.item_in_hand, allocator);
+        try Vector3f.write(stream, self.position);
+        try Vector3f.write(stream, self.clicked_position);
+        try stream.writeVarInt(self.block_runtime_id);
+        try stream.writeUint8(@intCast(self.client_prediction & 0xFF));
+        try stream.writeUint8(self.client_cooldown_state);
+    }
+
+    pub fn deinit(self: *ItemUseTransaction, allocator: std.mem.Allocator) void {
+        self.item_in_hand.deinit(allocator);
     }
 };
 
 fn skipInventoryAction(stream: *BinaryStream) !void {
-    const source_type = try stream.readVarInt();
-    switch (source_type) {
-        0 => {
-            _ = try stream.readZigZag();
-        },
-        1 => {},
-        2 => {
-            _ = try stream.readVarInt();
-        },
-        3 => {},
-        4 => {
-            _ = try stream.readVarInt();
-        },
-        else => {},
-    }
     _ = try stream.readVarInt();
-    try skipNetworkItemStackDescriptor(stream);
-    try skipNetworkItemStackDescriptor(stream);
-}
-
-fn skipNetworkItemStackDescriptor(stream: *BinaryStream) !void {
-    const id = try stream.readZigZag();
-    if (id == 0) return;
-
-    _ = try stream.readUint16(.Little);
-    _ = try stream.readVarInt();
-
-    const has_net_id = try stream.readBool();
-    if (has_net_id) {
-        _ = try stream.readZigZag();
-    }
-
-    _ = try stream.readZigZag();
-    try skipItemInstanceUserData(stream);
-}
-
-fn skipItemInstance(stream: *BinaryStream) !void {
-    const stack_net_id = try stream.readZigZag();
-    _ = stack_net_id;
-    try skipNetworkItemStackDescriptor(stream);
-}
-
-fn skipItemInstanceUserData(stream: *BinaryStream) !void {
-    const marker = try stream.readInt16(.Little);
-    if (marker == 0) return;
-
-    if (marker == -1) {
-        const nbt_version = try stream.readUint8();
-        _ = nbt_version;
-        try skipNbtCompound(stream);
-    }
-
-    const can_place_count = try stream.readInt32(.Little);
-    for (0..@intCast(can_place_count)) |_| {
-        try skipString16LE(stream);
-    }
-
-    const can_destroy_count = try stream.readInt32(.Little);
-    for (0..@intCast(can_destroy_count)) |_| {
-        try skipString16LE(stream);
-    }
-
-    if (marker == -1) {
-        const blocking_tick = try stream.readInt64(.Little);
-        _ = blocking_tick;
-    }
-}
-
-fn skipString16LE(stream: *BinaryStream) !void {
-    const len: u32 = @intCast(try stream.readInt16(.Little));
-    for (0..len) |_| {
-        _ = try stream.readUint8();
-    }
-}
-
-const NbtError = error{ EndOfBuffer, OutOfMemory };
-
-fn skipNbtCompound(stream: *BinaryStream) NbtError!void {
-    while (true) {
-        const tag_type = stream.readUint8() catch return;
-        if (tag_type == 0) break;
-
-        const name_len = stream.readUint16(.Little) catch return;
-        for (0..name_len) |_| {
-            _ = stream.readUint8() catch return;
+    if (try stream.readBool()) {
+        if (try stream.readBool()) {
+            _ = try stream.readUint8();
         }
-
-        skipNbtPayload(stream, tag_type);
     }
-}
-
-fn skipNbtPayload(stream: *BinaryStream, tag_type: u8) void {
-    switch (tag_type) {
-        1 => _ = stream.readUint8() catch return,
-        2 => _ = stream.readInt16(.Little) catch return,
-        3 => _ = stream.readInt32(.Little) catch return,
-        4 => _ = stream.readInt64(.Little) catch return,
-        5 => _ = stream.readFloat32(.Little) catch return,
-        6 => {
-            _ = stream.readInt64(.Little) catch return;
-        },
-        7 => {
-            const len: u32 = @intCast(stream.readInt32(.Little) catch return);
-            for (0..len) |_| {
-                _ = stream.readUint8() catch return;
-            }
-        },
-        8 => {
-            const len = stream.readUint16(.Little) catch return;
-            for (0..len) |_| {
-                _ = stream.readUint8() catch return;
-            }
-        },
-        9 => {
-            const list_type = stream.readUint8() catch return;
-            const count: u32 = @intCast(stream.readInt32(.Little) catch return);
-            for (0..count) |_| {
-                skipNbtPayload(stream, list_type);
-            }
-        },
-        10 => skipNbtCompound(stream) catch return,
-        11 => {
-            const len: u32 = @intCast(stream.readInt32(.Little) catch return);
-            for (0..len) |_| {
-                _ = stream.readInt32(.Little) catch return;
-            }
-        },
-        12 => {
-            const len: u32 = @intCast(stream.readInt32(.Little) catch return);
-            for (0..len) |_| {
-                _ = stream.readInt64(.Little) catch return;
-            }
-        },
-        else => {},
+    if (try stream.readBool()) {
+        if (try stream.readBool()) {
+            _ = try stream.readVarInt();
+        }
     }
+    _ = try stream.readVarInt();
+    try NetworkItemStackDescriptor.skipShort(stream);
+    try NetworkItemStackDescriptor.skipShort(stream);
 }

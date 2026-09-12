@@ -1,4 +1,4 @@
-pub const PermissionLevel = enum(i32) {
+pub const PermissionLevel = enum(i8) {
     Visitor = 0,
     Member = 1,
     Operator = 2,

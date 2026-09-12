@@ -7,22 +7,36 @@ pub const AnimateAction = enum(u8) {
     StopSleep = 2,
     CriticalHit = 3,
     MagicCriticalHit = 4,
+    _,
+};
+
+pub const SwingSource = enum(u8) {
+    None = 0,
+    Build = 1,
+    Mine = 2,
+    Interact = 3,
+    Attack = 4,
+    UseItem = 5,
+    ThrowItem = 6,
+    DropItem = 7,
+    Event = 8,
+    _,
 };
 
 pub const AnimatePacket = struct {
     action: AnimateAction,
     runtime_entity_id: u64,
     data: f32 = 0,
-    swing_source: []const u8 = "",
+    swing_source: ?SwingSource = null,
 
     pub fn serialize(self: *const AnimatePacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.Animate);
         try stream.writeUint8(@intFromEnum(self.action));
         try stream.writeVarLong(self.runtime_entity_id);
         try stream.writeFloat32(self.data, .Little);
-        if (self.swing_source.len > 0) {
+        if (self.swing_source) |source| {
             try stream.writeBool(true);
-            try stream.writeVarString(self.swing_source);
+            try stream.writeUint8(@intFromEnum(source));
         } else {
             try stream.writeBool(false);
         }
@@ -35,10 +49,10 @@ pub const AnimatePacket = struct {
         const action: AnimateAction = std.enums.fromInt(AnimateAction, action_raw) orelse return error.UnknownAnimateAction;
         const runtime_entity_id: u64 = @intCast(try stream.readVarLong());
         const data = try stream.readFloat32(.Little);
-        var swing_source: []const u8 = "";
-        const has_swing = try stream.readBool();
-        if (has_swing) {
-            swing_source = try stream.readVarString();
+        var swing_source: ?SwingSource = null;
+        if (try stream.readBool()) {
+            const swing_source_raw = try stream.readUint8();
+            swing_source = std.enums.fromInt(SwingSource, swing_source_raw) orelse .None;
         }
         return AnimatePacket{
             .action = action,

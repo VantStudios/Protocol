@@ -27,8 +27,8 @@ pub const InventoryTransactionPacket = struct {
 
         const legacy_request_id = try stream.readZigZag();
 
-        const has_changed_slots = try stream.readBool();
-        if (has_changed_slots) {
+        const has_legacy_slots = try stream.readBool();
+        if (has_legacy_slots) {
             const slot_count = try stream.readVarInt();
             for (0..slot_count) |_| {
                 _ = try stream.readUint8();
@@ -39,31 +39,66 @@ pub const InventoryTransactionPacket = struct {
             }
         }
 
-        const has_transaction_type = try stream.readBool();
-        if (!has_transaction_type) return error.InvalidPacket;
-
+        if (!try stream.readBool()) return error.InvalidPacket;
         const transaction_type_raw = try stream.readVarInt();
         const transaction_type: TransactionType = std.enums.fromInt(TransactionType, transaction_type_raw) orelse return error.InvalidTransactionType;
 
-        const transaction_data_has_value = try stream.readBool();
-        if (!transaction_data_has_value) return error.InvalidPacket;
+        if (!try stream.readBool()) return error.InvalidPacket;
+        const action_count: u32 = @intCast(try stream.readVarInt());
 
-        const action_count = try stream.readVarInt();
         var normal_data = NormalTransactionData{};
-        for (0..action_count) |_| {
-            if (transaction_type == .Normal) {
-                try readNormalAction(stream, &normal_data);
-            } else {
-                try skipInventoryAction(stream);
+        {
+            var has_world_drop = false;
+            var has_inventory_source = false;
+            var world_drop_count: u16 = 0;
+            var inventory_source_slot: u32 = 0;
+            for (0..action_count) |_| {
+                const source_type = try stream.readVarInt();
+
+                var container_id: ?u8 = null;
+                if (try stream.readBool()) {
+                    if (try stream.readBool()) {
+                        container_id = try stream.readUint8(); // window id
+                    }
+                }
+                if (try stream.readBool()) {
+                    if (try stream.readBool()) {
+                        _ = try stream.readVarInt(); // world flag
+                    }
+                }
+
+                const slot = try stream.readVarInt();
+
+                try NetworkItemStackDescriptor.skipShort(stream); // old item
+                _ = try stream.readShort(.Little); // new item network id
+                const new_count = try stream.readUint16(.Little);
+                _ = try stream.readVarInt(); // meta
+                if (try stream.readBool()) _ = try stream.readZigZag(); // net id
+                _ = try stream.readVarInt(); // block rid
+                const extra_len = try stream.readVarInt();
+                for (0..extra_len) |_| _ = try stream.readUint8();
+
+                if (source_type == 2 and slot == 0) {
+                    has_world_drop = true;
+                    world_drop_count = new_count;
+                } else if (source_type == 0 and (container_id orelse 255) == 0) {
+                    has_inventory_source = true;
+                    inventory_source_slot = @intCast(slot);
+                }
             }
+            normal_data.is_drop = has_world_drop and has_inventory_source and world_drop_count > 0;
+            normal_data.drop_slot = inventory_source_slot;
+            normal_data.drop_count = world_drop_count;
         }
 
+        // The type-specific payload rides AFTER the actions (empty for
+        // Normal transactions with a legacy request id).
         const transaction_data: TransactionData = switch (transaction_type) {
-            .Normal => .{ .normal = normal_data },
-            .Mismatch => .{ .mismatch = {} },
             .UseItem => .{ .use_item = try readUseItem(stream) },
             .UseItemOnEntity => .{ .use_item_on_entity = try readUseItemOnEntity(stream) },
             .ReleaseItem => .{ .release_item = try readReleaseItem(stream) },
+            .Normal => .{ .normal = normal_data },
+            .Mismatch => .{ .mismatch = {} },
         };
 
         return .{
@@ -75,36 +110,9 @@ pub const InventoryTransactionPacket = struct {
     }
 };
 
-fn readUseItem(stream: *BinaryStream) !UseItemTransactionData {
-    const action_type = try stream.readVarInt();
-    const trigger_type = try stream.readUint8();
-    const block_position = try BlockPosition.read(stream);
-    const block_face = try stream.readByte();
-    const hot_bar_slot = try stream.readZigZag();
-    try NetworkItemStackDescriptor.skipShort(stream);
-    const position = try Vector3f.read(stream);
-    const clicked_position = try Vector3f.read(stream);
-    const block_runtime_id = try stream.readVarInt();
-    const client_prediction = try stream.readVarInt();
-    const client_cooldown_state = try stream.readVarInt();
-
-    return .{
-        .action_type = action_type,
-        .trigger_type = trigger_type,
-        .block_position = block_position,
-        .block_face = block_face,
-        .hot_bar_slot = hot_bar_slot,
-        .position = position,
-        .clicked_position = clicked_position,
-        .block_runtime_id = block_runtime_id,
-        .client_prediction = client_prediction,
-        .client_cooldown_state = client_cooldown_state,
-    };
-}
-
 fn readUseItemOnEntity(stream: *BinaryStream) !UseItemOnEntityTransactionData {
     const target_entity_runtime_id = try stream.readVarLong();
-    const action_type = try stream.readVarInt();
+    const action_type = try stream.readZigZag();
     const hot_bar_slot = try stream.readZigZag();
     try NetworkItemStackDescriptor.skipShort(stream);
     const position = try Vector3f.read(stream);
@@ -120,7 +128,7 @@ fn readUseItemOnEntity(stream: *BinaryStream) !UseItemOnEntityTransactionData {
 }
 
 fn readReleaseItem(stream: *BinaryStream) !ReleaseItemTransactionData {
-    const action_type = try stream.readVarInt();
+    const action_type = try stream.readZigZag();
     const hot_bar_slot = try stream.readZigZag();
     try NetworkItemStackDescriptor.skipShort(stream);
     const head_position = try Vector3f.read(stream);
@@ -132,41 +140,42 @@ fn readReleaseItem(stream: *BinaryStream) !ReleaseItemTransactionData {
     };
 }
 
-fn readNormalAction(stream: *BinaryStream, data: *NormalTransactionData) !void {
-    const source_type = try stream.readVarInt();
-    switch (source_type) {
-        0, 99999 => _ = try stream.readZigZag(),
-        2 => _ = try stream.readVarInt(),
-        else => {},
-    }
-    const slot = try stream.readVarInt();
-
+fn readUseItem(stream: *BinaryStream) !UseItemTransactionData {
+    const action_type = try stream.readZigZag();
+    const trigger_type = try stream.readUint8();
+    const block_position = try BlockPosition.read(stream);
+    const block_face = try stream.readUint8();
+    const hot_bar_slot = try stream.readZigZag();
     try NetworkItemStackDescriptor.skipShort(stream);
+    const position = try Vector3f.read(stream);
+    const clicked_position = try Vector3f.read(stream);
+    const block_runtime_id = try stream.readVarInt();
+    const client_prediction = try stream.readUint8();
+    const client_cooldown_state = try stream.readUint8();
 
-    _ = try stream.readZigZag();
-    const new_count = try stream.readUint16(.Little);
-    _ = try stream.readVarInt();
-    if (try stream.readBool()) _ = try stream.readZigZag();
-    _ = try stream.readZigZag();
-    const extra_len = try stream.readVarInt();
-    for (0..extra_len) |_| _ = try stream.readUint8();
-
-    if (source_type == 0) {
-        data.drop_slot = slot;
-    } else if (source_type == 2) {
-        data.is_drop = true;
-        data.drop_count = new_count;
-    }
+    return .{
+        .action_type = action_type,
+        .trigger_type = trigger_type,
+        .block_position = block_position,
+        .block_face = block_face,
+        .hot_bar_slot = hot_bar_slot,
+        .position = position,
+        .clicked_position = clicked_position,
+        .block_runtime_id = block_runtime_id,
+        .client_prediction = client_prediction,
+        .client_cooldown_state = client_cooldown_state,
+    };
 }
 
-fn skipInventoryAction(stream: *BinaryStream) !void {
-    const source_type = try stream.readVarInt();
-    switch (source_type) {
-        0, 99999 => _ = try stream.readZigZag(),
-        2 => _ = try stream.readVarInt(),
-        else => {},
+fn skipInventorySource(stream: *BinaryStream) !void {
+    if (try stream.readBool()) {
+        if (try stream.readBool()) {
+            _ = try stream.readUint8();
+        }
     }
-    _ = try stream.readVarInt();
-    try NetworkItemStackDescriptor.skipShort(stream);
-    try NetworkItemStackDescriptor.skipShort(stream);
+    if (try stream.readBool()) {
+        if (try stream.readBool()) {
+            _ = try stream.readVarInt();
+        }
+    }
 }

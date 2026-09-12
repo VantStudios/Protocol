@@ -13,8 +13,11 @@ pub const InteractPacket = struct {
         try stream.writeVarInt(Packet.Interact);
         try stream.writeUint8(@intFromEnum(self.action));
         try stream.writeVarLong(@intCast(self.actor_runtime_id));
-        if (self.action == .InteractUpdate) {
-            try Vector3f.write(stream, self.position orelse Vector3f.init(0, 0, 0));
+        if (self.position) |pos| {
+            try stream.writeBool(true);
+            try Vector3f.write(stream, pos);
+        } else {
+            try stream.writeBool(false);
         }
         return stream.getBuffer();
     }
@@ -25,7 +28,7 @@ pub const InteractPacket = struct {
         const action: InteractAction = std.enums.fromInt(InteractAction, action_raw) orelse return error.UnknownInteractAction;
         const actor_runtime_id: u64 = @intCast(try stream.readVarLong());
         var position: ?Vector3f = null;
-        if (action == .InteractUpdate) {
+        if (try stream.readBool()) {
             position = try Vector3f.read(stream);
         }
         return InteractPacket{
