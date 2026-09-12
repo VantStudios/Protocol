@@ -36,7 +36,7 @@ pub const StartGamePacket = struct {
     created_in_editor: bool,
     exported_from_editor: bool,
     day_cycle_stop_time: i32,
-    edu_offer: u32,
+    edu_offer: i32,
     edu_features: bool,
     edu_product_uuid: []const u8,
     rain_level: f32,
@@ -44,8 +44,8 @@ pub const StartGamePacket = struct {
     confirmed_platform_locked_content: bool,
     multiplayer_game: bool,
     broadcast_to_lan: bool,
-    xbl_broadcast_mode: u32,
-    platform_broadcast_mode: u32,
+    xbl_broadcast_mode: i32,
+    platform_broadcast_mode: i32,
     commands_enabled: bool,
     texture_packs_required: bool,
     gamerules: []GameRules,
@@ -120,7 +120,7 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.created_in_editor);
         try stream.writeBool(self.exported_from_editor);
         try stream.writeZigZag(self.day_cycle_stop_time);
-        try stream.writeVarInt(self.edu_offer);
+        try stream.writeZigZag(self.edu_offer);
         try stream.writeBool(self.edu_features);
         try stream.writeVarString(self.edu_product_uuid);
         try stream.writeFloat32(self.rain_level, .Little);
@@ -128,8 +128,8 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.confirmed_platform_locked_content);
         try stream.writeBool(self.multiplayer_game);
         try stream.writeBool(self.broadcast_to_lan);
-        try stream.writeVarInt(self.xbl_broadcast_mode);
-        try stream.writeVarInt(self.platform_broadcast_mode);
+        try stream.writeZigZag(self.xbl_broadcast_mode);
+        try stream.writeZigZag(self.platform_broadcast_mode);
         try stream.writeBool(self.commands_enabled);
         try stream.writeBool(self.texture_packs_required);
         try GameRules.write(stream, self.gamerules);
@@ -137,7 +137,7 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.experiments_previously_toggled);
         try stream.writeBool(self.bonus_chest);
         try stream.writeBool(self.map_enabled);
-        try stream.writeByte(@intFromEnum(self.permission_level));
+        try stream.writeZigZag(@intFromEnum(self.permission_level));
         try stream.writeInt32(self.server_chunk_tick_range, .Little);
         try stream.writeBool(self.has_locked_behavior_pack);
         try stream.writeBool(self.has_locked_resource_pack);
@@ -185,7 +185,11 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.client_side_generation);
         try stream.writeBool(self.block_network_ids_are_hashes);
         try stream.writeBool(self.server_controlled_sounds);
-        try stream.writeBool(self.contains_server_join_info);
+        if (self.contains_server_join_info) {
+            // NOOP
+            return error.UnsupportedServerJoinInfo;
+        }
+        try stream.writeBool(false);
         try ServerTelemetryData.write(stream, self.server_telemetry_data);
 
         return stream.getBuffer();

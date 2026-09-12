@@ -39,7 +39,7 @@ pub const AddPlayerPacket = struct {
         try stream.writeFloat32(self.rotation.yaw, .Little);
         try stream.writeFloat32(self.rotation.head_yaw, .Little);
 
-        try NetworkItemStackDescriptor.write(stream, self.carried_item, stream.allocator);
+        try NetworkItemStackDescriptor.writeShort(stream, self.carried_item, stream.allocator);
         try stream.writeZigZag(self.game_type);
 
         try stream.writeVarInt(@intCast(self.entity_metadata.len));

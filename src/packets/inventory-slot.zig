@@ -1,5 +1,7 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const Packet = @import("../root.zig").Packet;
 const ContainerId = @import("../root.zig").ContainerId;
 const FullContainerName = @import("../root.zig").FullContainerName;
@@ -8,7 +10,7 @@ const NetworkItemStackDescriptor = @import("../root.zig").NetworkItemStackDescri
 pub const InventorySlotPacket = struct {
     container_id: ContainerId,
     slot: u32,
-    full_container_name: FullContainerName,
+    full_container_name: ?FullContainerName = null,
     storage_item: NetworkItemStackDescriptor,
     item: NetworkItemStackDescriptor,
 
@@ -17,7 +19,12 @@ pub const InventorySlotPacket = struct {
         try stream.writeVarInt(@as(u32, @bitCast(@as(i32, @intFromEnum(self.container_id)))));
         try stream.writeVarInt(self.slot);
 
-        try FullContainerName.write(stream, self.full_container_name);
+        if (self.full_container_name) |name| {
+            try stream.writeBool(true);
+            try FullContainerName.write(stream, name);
+        } else {
+            try stream.writeBool(false);
+        }
 
         if (self.storage_item.network != 0) {
             try stream.writeBool(true);
@@ -35,7 +42,10 @@ pub const InventorySlotPacket = struct {
         const container_id: ContainerId = @enumFromInt(@as(i8, @truncate(@as(i32, @bitCast(try stream.readVarInt())))));
         const slot = try stream.readVarInt();
 
-        const full_container_name = try FullContainerName.read(stream);
+        const full_container_name: ?FullContainerName = if (try stream.readBool())
+            try FullContainerName.read(stream)
+        else
+            null;
 
         const storage_item = if (try stream.readBool())
             try NetworkItemStackDescriptor.readShort(stream, stream.allocator)

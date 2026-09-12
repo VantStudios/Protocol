@@ -1,4 +1,4 @@
-pub const CreativeItemCategory = enum(i32) {
+pub const CreativeItemCategory = enum(u8) {
     All = 0,
     Construction = 1,
     Nature = 2,

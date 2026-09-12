@@ -47,6 +47,7 @@ pub const DataItem = struct {
 
     pub fn write(self: DataItem, stream: *BinaryStream) !void {
         try stream.writeVarInt(@intCast(self.id));
+        try stream.writeVarInt(@intFromEnum(self.type));
         try stream.writeUint8(@intFromEnum(self.type));
 
         switch (self.value) {
@@ -66,7 +67,9 @@ pub const DataItem = struct {
 
     pub fn read(stream: *BinaryStream, allocator: std.mem.Allocator) !DataItem {
         const id: u32 = @intCast(try stream.readVarInt());
+        const type_varint = try stream.readVarInt();
         const type_val = try stream.readUint8();
+        if (type_val != type_varint) return error.ActorDataTypeMismatch;
         const data_type: ActorDataType = std.enums.fromInt(ActorDataType, type_val) orelse return error.UnknownActorDataType;
 
         const value: DataValue = switch (data_type) {

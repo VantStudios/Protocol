@@ -10,10 +10,10 @@ pub const PacketCommand = struct {
     name: []const u8,
     description: []const u8,
     flags: u16,
-    permission_level: u8,
-    aliases_offset: u32,
-    chained_offsets: []const u32,
-    overloads: []const PacketOverload,
+    permission: []const u8,
+    aliases_offset: i32 = -1,
+    chained_offsets: []const u32 = &.{},
+    overloads: []const PacketOverload = &.{},
 };
 
 pub const PacketOverload = struct {
@@ -34,9 +34,9 @@ pub const PacketDynamicEnum = struct {
 };
 
 pub const CommandEnumConstraint = struct {
+    affected_value_index: u32,
     enum_index: u32,
-    value_index: u32,
-    constraints: []const u8,
+    constraints: []const u8 = &.{},
 };
 
 pub const ChainedSubcommandValue = struct {
@@ -49,7 +49,8 @@ pub const ChainedSubcommand = struct {
 };
 
 pub const ChainedSubcommandIndex = struct {
-    index: u32,
+    name_index: u32,
+    type_index: u32 = 0,
 };
 
 pub const AvailableCommandsPacket = struct {
@@ -94,7 +95,8 @@ pub const AvailableCommandsPacket = struct {
             try stream.writeVarString(cs.name);
             try stream.writeVarInt(@intCast(cs.values.len));
             for (cs.values) |v| {
-                try stream.writeUint32(v.index, .Little);
+                try stream.writeVarInt(v.name_index);
+                try stream.writeVarInt(v.type_index);
             }
         }
 
@@ -103,8 +105,8 @@ pub const AvailableCommandsPacket = struct {
             try stream.writeVarString(cmd.name);
             try stream.writeVarString(cmd.description);
             try stream.writeUint16(cmd.flags, .Little);
-            try stream.writeUint8(cmd.permission_level);
-            try stream.writeUint32(cmd.aliases_offset, .Little);
+            try stream.writeVarString(cmd.permission);
+            try stream.writeInt32(cmd.aliases_offset, .Little);
             try stream.writeVarInt(@intCast(cmd.chained_offsets.len));
             for (cmd.chained_offsets) |offset| {
                 try stream.writeUint32(offset, .Little);
@@ -133,8 +135,8 @@ pub const AvailableCommandsPacket = struct {
 
         try stream.writeVarInt(@intCast(self.constraints.len));
         for (self.constraints) |c| {
+            try stream.writeUint32(c.affected_value_index, .Little);
             try stream.writeUint32(c.enum_index, .Little);
-            try stream.writeUint32(c.value_index, .Little);
             try stream.writeVarInt(@intCast(c.constraints.len));
             for (c.constraints) |constraint_val| {
                 try stream.writeUint8(constraint_val);

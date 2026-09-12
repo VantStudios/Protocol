@@ -1,5 +1,7 @@
 const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const ItemInstanceUserData = @import("item-instance-user-data.zig").ItemInstanceUserData;
 
 pub const NetworkItemInstanceDescriptor = struct {
@@ -11,14 +13,6 @@ pub const NetworkItemInstanceDescriptor = struct {
 
     pub fn read(stream: *BinaryStream, allocator: std.mem.Allocator) !NetworkItemInstanceDescriptor {
         const network = try stream.readZigZag();
-        if (network == 0) return .{
-            .network = network,
-            .stack_size = null,
-            .metadata = null,
-            .network_block_id = null,
-            .extras = null,
-        };
-
         const stack_size = try stream.readUint16(.Little);
         const metadata = try stream.readVarInt();
         const network_block_id = try stream.readZigZag();
@@ -40,8 +34,6 @@ pub const NetworkItemInstanceDescriptor = struct {
 
     pub fn write(stream: *BinaryStream, value: NetworkItemInstanceDescriptor, allocator: std.mem.Allocator) !void {
         try stream.writeZigZag(value.network);
-        if (value.network == 0) return;
-
         try stream.writeUint16(value.stack_size orelse 0, .Little);
         try stream.writeVarInt(value.metadata orelse 0);
         try stream.writeZigZag(value.network_block_id orelse 0);

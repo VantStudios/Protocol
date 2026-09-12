@@ -17,7 +17,13 @@ pub const TextPacket = struct {
         try stream.writeVarInt(Packet.Text);
         try stream.writeBool(self.needs_translation);
 
-        try stream.writeVarInt(@intFromEnum(self.text_type));
+        const category: u8 = switch (self.text_type) {
+            .Raw, .Tip, .System, .Object, .ObjectWhisper, .ObjectAnnouncement => 0,
+            .Chat, .Whisper, .Announcement => 1,
+            .Translation, .Popup, .JukeboxPopup => 2,
+        };
+        try stream.writeUint8(category);
+        try stream.writeUint8(@intFromEnum(self.text_type));
 
         switch (self.text_type) {
             .Chat, .Whisper, .Announcement => {
@@ -52,7 +58,8 @@ pub const TextPacket = struct {
     pub fn deserialize(stream: *BinaryStream) !TextPacket {
         _ = try stream.readVarInt();
         const needs_translation = try stream.readBool();
-        const text_type: TextType = std.enums.fromInt(TextType, try stream.readVarInt()) orelse return error.UnknownTextType;
+        _ = try stream.readUint8(); // category
+        const text_type: TextType = std.enums.fromInt(TextType, try stream.readUint8()) orelse return error.UnknownTextType;
 
         var source_name: []const u8 = "";
         var message: []const u8 = "";

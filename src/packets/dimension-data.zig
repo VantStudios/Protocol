@@ -4,6 +4,7 @@ const BinaryStream = @import("BinaryStream").BinaryStream;
 
 const Packet = @import("../enums/packet.zig").Packet;
 const Vector3i = @import("../types/block-position.zig").BlockPosition;
+const Uuid = @import("../types/uuid.zig").Uuid;
 
 pub const DimensionDefinition = struct {
     id: []const u8,
@@ -26,8 +27,7 @@ pub const DimensionDataPacket = struct {
             try stream.writeZigZag(def.min_height);
             try stream.writeZigZag(def.generator_type);
             try stream.writeZigZag(def.dimension_type);
-            // packId: 16 raw bytes (UUID)
-            try stream.write(def.pack_id);
+            try Uuid.write(stream, def.pack_id);
         }
         return stream.getBuffer();
     }
@@ -42,7 +42,7 @@ pub const DimensionDataPacket = struct {
             const min_height = try stream.readZigZag();
             const generator_type = try stream.readZigZag();
             const dimension_type = try stream.readZigZag();
-            const pack_id = stream.read(16) catch &[0]u8{};
+            const pack_id = Uuid.read(stream);
             definitions[i] = .{
                 .id = id,
                 .max_height = max_height,

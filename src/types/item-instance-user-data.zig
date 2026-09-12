@@ -25,8 +25,8 @@ pub const ItemInstanceUserData = struct {
             switch (version) {
                 1 => {
                     nbt = try CompoundTag.read(stream, allocator, .{
-                        .name = false,
-                        .tag_type = false,
+                        .name = true,
+                        .tag_type = true,
                         .varint = false,
                         .endian = .Little,
                     });
@@ -38,13 +38,13 @@ pub const ItemInstanceUserData = struct {
         const placeCount: u32 = @intCast(try stream.readInt32(.Little));
         const can_place_on = try allocator.alloc([]const u8, placeCount);
         for (0..placeCount) |i| {
-            can_place_on[i] = try stream.readString32(.Little);
+            can_place_on[i] = try stream.readString16(.Little);
         }
 
         const destroyCount: u32 = @intCast(try stream.readInt32(.Little));
         const can_destroy = try allocator.alloc([]const u8, destroyCount);
         for (0..destroyCount) |i| {
-            can_destroy[i] = try stream.readString32(.Little);
+            can_destroy[i] = try stream.readString16(.Little);
         }
 
         const ticking: ?i64 = if (networkId == @import("../root.zig").SHIELD_NETWORK_ID)
@@ -65,8 +65,8 @@ pub const ItemInstanceUserData = struct {
             try stream.writeUint16(0xFFFF, .Little);
             try stream.writeUint8(0x01);
             try CompoundTag.write(stream, nbt, .{
-                .name = false,
-                .tag_type = false,
+                .name = true,
+                .tag_type = true,
                 .varint = false,
                 .endian = .Little,
             });
@@ -76,12 +76,12 @@ pub const ItemInstanceUserData = struct {
 
         try stream.writeInt32(@intCast(value.can_place_on.len), .Little);
         for (value.can_place_on) |s| {
-            try stream.writeString32(s, .Little);
+            try stream.writeString16(s, .Little);
         }
 
         try stream.writeInt32(@intCast(value.can_destroy.len), .Little);
         for (value.can_destroy) |s| {
-            try stream.writeString32(s, .Little);
+            try stream.writeString16(s, .Little);
         }
 
         if (networkId == @import("../root.zig").SHIELD_NETWORK_ID) {

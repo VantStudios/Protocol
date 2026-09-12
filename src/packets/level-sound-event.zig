@@ -3,6 +3,13 @@ const std = @import("std");
 const BinaryStream = @import("BinaryStream").BinaryStream;
 
 const Packet = @import("../enums/packet.zig").Packet;
+
+/// ZigZag32 computed in i64
+fn writeZigZag32(stream: *BinaryStream, value: i32) !void {
+    const z: i64 = (@as(i64, value) << 1) ^ (@as(i64, value) >> 31);
+    try stream.writeVarInt(@intCast(z));
+}
+
 const SoundEvent = @import("../enums/sound-event.zig").SoundEvent;
 const Vector3f = @import("../types/vector3f.zig").Vector3f;
 
@@ -14,27 +21,33 @@ pub const LevelSoundEventPacket = struct {
     is_baby_mob: bool,
     is_global: bool,
     unique_actor_id: i64 = -1,
-    fire_at_position: Vector3f = Vector3f.init(0, 0, 0),
+    fire_at_position: ?Vector3f = null,
 
     pub fn serialize(self: *const LevelSoundEventPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.LevelSoundEvent);
 
-        try stream.writeVarString(self.event.asString());
+        try stream.writeVarString(self.event.wire_name());
         try Vector3f.write(stream, self.position);
-        try stream.writeZigZag(self.data);
+        try writeZigZag32(stream, self.data);
         try stream.writeVarString(self.actor_identifier);
         try stream.writeBool(self.is_baby_mob);
         try stream.writeBool(self.is_global);
         try stream.writeInt64(self.unique_actor_id, .Little);
-        try Vector3f.write(stream, self.fire_at_position);
+
+        if (self.fire_at_position) |fire_at| {
+            try stream.writeBool(true);
+            try Vector3f.write(stream, fire_at);
+        } else {
+            try stream.writeBool(false);
+        }
         return stream.getBuffer();
     }
 
     pub fn deserialize(stream: *BinaryStream, allocator: std.mem.Allocator) !LevelSoundEventPacket {
         _ = try stream.readVarInt();
 
-        const eventStr = try stream.readVarString();
-        const event = SoundEvent.fromString(eventStr);
+        const sound_name = try stream.readVarString();
+        const event = SoundEvent.from_wire_name(sound_name) orelse return error.UnknownSoundEvent;
         const position = try Vector3f.read(stream);
         const data = try stream.readZigZag();
         const raw_actor_id = try stream.readVarString();
@@ -43,7 +56,10 @@ pub const LevelSoundEventPacket = struct {
         const is_baby_mob = try stream.readBool();
         const is_global = try stream.readBool();
         const unique_actor_id = try stream.readInt64(.Little);
-        const fire_at_position = try Vector3f.read(stream);
+        var fire_at_position: ?Vector3f = null;
+        if (try stream.readBool()) {
+            fire_at_position = try Vector3f.read(stream);
+        }
 
         return .{
             .event = event,

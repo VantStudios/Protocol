@@ -16,7 +16,9 @@ pub const SubChunkRequestResult = enum(u8) {
 };
 
 pub const SubChunkData = struct {
-    offset: i8 = 0,
+    offset_x: i8 = 0,
+    offset_y: i8 = 0,
+    offset_z: i8 = 0,
     result: SubChunkRequestResult = .Undefined,
     data: ?[]const u8 = null,
     height_map_type: HeightMapDataType = .None,
@@ -26,7 +28,9 @@ pub const SubChunkData = struct {
     blob_id: ?i64 = null,
 
     fn write(stream: *BinaryStream, sub: SubChunkData) !void {
-        try stream.writeByte(sub.offset);
+        try stream.writeByte(@bitCast(sub.offset_x));
+        try stream.writeByte(@bitCast(sub.offset_y));
+        try stream.writeByte(@bitCast(sub.offset_z));
         try stream.writeUint8(@intFromEnum(sub.result));
         if (sub.data) |data| {
             try stream.writeBool(true);

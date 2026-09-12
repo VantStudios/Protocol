@@ -1,9 +1,8 @@
-pub const PROTOCOL = 2169;
-pub const MINECRAFT_VERSION = "1.26.44";
-pub const SHIELD_NETWORK_ID = 387;
+const std = @import("std");
 
 pub const NBT = @import("nbt");
 
+pub const BiomeDefinitionsLoader = @import("./data/biome-definitions.zig");
 pub const Data = @import("./data/root.zig");
 pub const AbilityIndex = @import("./enums/ability-index.zig").AbilityIndex;
 pub const AbilityLayerType = @import("./enums/ability-layer-type.zig").AbilityLayerType;
@@ -59,6 +58,8 @@ pub const PacketCommand = @import("./packets/available-commands.zig").PacketComm
 pub const PacketOverload = @import("./packets/available-commands.zig").PacketOverload;
 pub const PacketParameter = @import("./packets/available-commands.zig").PacketParameter;
 pub const PacketDynamicEnum = @import("./packets/available-commands.zig").PacketDynamicEnum;
+pub const BiomeDefinitionListPacket = @import("./packets/biome-definition-list.zig").BiomeDefinitionListPacket;
+pub const BiomeDefinition = @import("./packets/biome-definition-list.zig").BiomeDefinition;
 pub const BlockActorDataPacket = @import("./packets/block-actor-data.zig").BlockActorDataPacket;
 pub const BlockEventPacket = @import("./packets/block-event.zig").BlockEventPacket;
 pub const BlockEventType = @import("./packets/block-event.zig").BlockEventType;
@@ -119,6 +120,10 @@ pub const ResourcePackStackPacket = @import("./packets/resource-pack-stack.zig")
 pub const ResourcePacksInfoPacket = @import("./packets/resource-packs-info.zig").ResourcePacksInfoPacket;
 pub const ServerToClientHandshake = @import("./packets/server-to-client-handshake.zig").ServerToClientHandshake;
 pub const ServerboundDiagnosticsPacket = @import("./packets/serverbound-diagnostics.zig").ServerboundDiagnosticsPacket;
+pub const EntityDiagnosticTimingInfo = @import("./packets/serverbound-diagnostics.zig").EntityDiagnosticTimingInfo;
+pub const SystemDiagnosticTimingInfo = @import("./packets/serverbound-diagnostics.zig").SystemDiagnosticTimingInfo;
+pub const SystemCategory = @import("./packets/serverbound-diagnostics.zig").SystemCategory;
+pub const WhiskerScopeDataSummary = @import("./packets/serverbound-diagnostics.zig").WhiskerScopeDataSummary;
 pub const SetActorDataPacket = @import("./packets/set-actor-data.zig").SetActorDataPacket;
 pub const SetActorMotionPacket = @import("./packets/set-actor-motion.zig").SetActorMotionPacket;
 pub const SetPlayerGameTypePacket = @import("./packets/set-player-game-type.zig").SetPlayerGameTypePacket;
@@ -136,8 +141,12 @@ pub const StructureBlockType = @import("./packets/structure-block-update.zig").S
 pub const StructureEditorData = @import("./packets/structure-block-update.zig").StructureEditorData;
 pub const StructureRedstoneSaveMode = @import("./packets/structure-block-update.zig").StructureRedstoneSaveMode;
 pub const StructureSettings = @import("./packets/structure-block-update.zig").StructureSettings;
+pub const SubChunkRequestPacket = @import("./packets/sub-chunk-request.zig").SubChunkRequestPacket;
+pub const SubChunkOffset = @import("./packets/sub-chunk-request.zig").SubChunkOffset;
 pub const SubChunkPacket = @import("./packets/sub-chunk.zig").SubChunkPacket;
 pub const SubChunkData = @import("./packets/sub-chunk.zig").SubChunkData;
+pub const SubChunkRequestResult = @import("./packets/sub-chunk.zig").SubChunkRequestResult;
+pub const HeightMapDataType = @import("./packets/sub-chunk.zig").HeightMapDataType;
 pub const TakeItemActorPacket = @import("./packets/take-item-actor.zig").TakeItemActorPacket;
 pub const TextPacket = @import("./packets/text.zig").TextPacket;
 pub const TransferPacket = @import("./packets/transfer.zig").TransferPacket;
@@ -146,6 +155,7 @@ pub const UpdateAttributesPacket = @import("./packets/update-attributes.zig").Up
 pub const UpdateBlockPacket = @import("./packets/update-block.zig").UpdateBlockPacket;
 pub const UpdateTradePacket = @import("./packets/update-trade.zig").UpdateTradePacket;
 pub const VoxelShapesPacket = @import("./packets/voxel-shapes.zig").VoxelShapesPacket;
+pub const VoxelShapeNameEntry = @import("./packets/voxel-shapes.zig").VoxelShapeNameEntry;
 pub const AbilityLayer = @import("./types/ability-layer.zig").AbilityLayer;
 pub const AbilitySet = @import("./types/ability-set.zig").AbilitySet;
 pub const AttributeModifier = @import("./types/attribute-modifier.zig").AttributeModifier;
@@ -161,6 +171,8 @@ pub const FullContainerName = @import("./types/full-container-name.zig").FullCon
 pub const GameRules = @import("./types/game-rules.zig");
 pub const InventoryTransactionData = @import("./types/inventory-transaction-data.zig");
 pub const ItemInstanceUserData = @import("./types/item-instance-user-data.zig").ItemInstanceUserData;
+pub const StackRequestAction = @import("./types/item-stack-request.zig").StackRequestAction;
+pub const StackRequestSlotInfo = @import("./types/item-stack-request.zig").StackRequestSlotInfo;
 pub const ItemStackRequest = @import("./types/item-stack-request.zig").ItemStackRequest;
 pub const ItemStackResponse = @import("./types/item-stack-response.zig").ItemStackResponse;
 pub const ItemUseTransaction = @import("./types/item-use-transaction.zig").ItemUseTransaction;
@@ -185,3 +197,12 @@ pub const StackResponseSlotInfo = @import("./types/stack-response-slot-info.zig"
 pub const Uuid = @import("./types/uuid.zig").Uuid;
 pub const Vector2f = @import("./types/vector2f.zig").Vector2f;
 pub const Vector3f = @import("./types/vector3f.zig").Vector3f;
+
+pub const PROTOCOL = 2169;
+pub const COMPATIBLE_PROTOCOLS = [_]i32{ 2168, 2169 };
+pub const MINECRAFT_VERSION = "1.26.45";
+pub const SHIELD_NETWORK_ID = 387;
+
+test {
+    std.testing.refAllDecls(@This());
+}

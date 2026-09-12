@@ -64,4 +64,5 @@ pub const InputData = enum(u8) {
     SneakReleasedRaw = 62,
     SneakPressedRaw = 63,
     SneakCurrentRaw = 64,
+    InternalUpdateRaw = 65,
 };

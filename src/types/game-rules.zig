@@ -65,7 +65,7 @@ pub const GameRules = struct {
 
             switch (rule.value) {
                 .Bool => |val| try stream.writeBool(val),
-                .Int => |val| try stream.writeZigZag(val),
+                .Int => |val| try stream.writeInt32(val, .Little),
                 .Float => |val| try stream.writeFloat32(val, .Little),
             }
         }

@@ -52,7 +52,7 @@ test "successful item stack response serializes container updates" {
                                 .count = 16,
                                 .stack_network_id = 9001,
                                 .custom_name = "Test",
-                                .filtered_custom_name = "",
+                                .filtered_custom_name = null,
                                 .durability_correction = 7,
                             },
                         },
@@ -79,9 +79,11 @@ test "successful item stack response serializes container updates" {
     try std.testing.expectEqual(@as(u8, 2), try read_stream.readUint8());
     try std.testing.expectEqual(@as(u8, 2), try read_stream.readUint8());
     try std.testing.expectEqual(@as(u8, 16), try read_stream.readUint8());
+    try std.testing.expect(try read_stream.readBool());
+    try std.testing.expect(try read_stream.readBool());
     try std.testing.expectEqual(@as(i32, 9001), try read_stream.readZigZag());
     try std.testing.expectEqualStrings("Test", try read_stream.readVarString());
-    try std.testing.expectEqualStrings("", try read_stream.readVarString());
+    try std.testing.expect(!(try read_stream.readBool()));
     try std.testing.expectEqual(@as(i32, 7), try read_stream.readZigZag());
     try std.testing.expectEqual(buf.len, read_stream.offset);
 }
@@ -118,5 +120,8 @@ test "error item stack response carries empty containers opt-in" {
     try std.testing.expect(try read_stream.readBool());
     try std.testing.expect(try read_stream.readBool());
     try std.testing.expectEqual(@as(u32, 1), try read_stream.readVarInt());
+    try std.testing.expectEqual(ContainerName.Inventory, @as(ContainerName, @enumFromInt(try read_stream.readUint8())));
+    try std.testing.expect(!(try read_stream.readBool()));
+    try std.testing.expectEqual(@as(u32, 0), try read_stream.readVarInt());
     try std.testing.expectEqual(buf.len, read_stream.offset);
 }

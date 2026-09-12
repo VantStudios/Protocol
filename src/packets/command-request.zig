@@ -1,13 +1,72 @@
+const std = @import("std");
+
 const BinaryStream = @import("BinaryStream").BinaryStream;
+
 const Packet = @import("../root.zig").Packet;
 const Uuid = @import("../types/uuid.zig").Uuid;
 
-pub const CommandOriginType = enum(u8) {
-    Player = 0,
-    DevConsole = 1,
-    Test = 2,
-    AutomationPlayer = 3,
-    _,
+pub const CommandOriginType = enum {
+    Player,
+    Block,
+    MinecartBlock,
+    DevConsole,
+    Test,
+    AutomationPlayer,
+    ClientAutomation,
+    DedicatedServer,
+    Entity,
+    Virtual,
+    GameArgument,
+    EntityServer,
+    Precompiled,
+    GameDirectorEntityServer,
+    Scripting,
+    ExecuteContext,
+    Unknown,
+
+    pub fn fromString(str: []const u8) CommandOriginType {
+        const map = std.StaticStringMap(CommandOriginType).initComptime(.{
+            .{ "player", .Player },
+            .{ "commandblock", .Block },
+            .{ "minecartcommandblock", .MinecartBlock },
+            .{ "devconsole", .DevConsole },
+            .{ "test", .Test },
+            .{ "automationplayer", .AutomationPlayer },
+            .{ "clientautomation", .ClientAutomation },
+            .{ "dedicatedserver", .DedicatedServer },
+            .{ "entity", .Entity },
+            .{ "virtual", .Virtual },
+            .{ "gameargument", .GameArgument },
+            .{ "entityserver", .EntityServer },
+            .{ "precompiled", .Precompiled },
+            .{ "gamedirectorentityserver", .GameDirectorEntityServer },
+            .{ "scripting", .Scripting },
+            .{ "executecontext", .ExecuteContext },
+        });
+        return map.get(str) orelse .Unknown;
+    }
+
+    pub fn toString(self: CommandOriginType) []const u8 {
+        return switch (self) {
+            .Player => "player",
+            .Block => "commandblock",
+            .MinecartBlock => "minecartcommandblock",
+            .DevConsole => "devconsole",
+            .Test => "test",
+            .AutomationPlayer => "automationplayer",
+            .ClientAutomation => "clientautomation",
+            .DedicatedServer => "dedicatedserver",
+            .Entity => "entity",
+            .Virtual => "virtual",
+            .GameArgument => "gameargument",
+            .EntityServer => "entityserver",
+            .Precompiled => "precompiled",
+            .GameDirectorEntityServer => "gamedirectorentityserver",
+            .Scripting => "scripting",
+            .ExecuteContext => "executecontext",
+            .Unknown => "unknown",
+        };
+    }
 };
 
 pub const CommandRequestPacket = struct {
@@ -23,8 +82,8 @@ pub const CommandRequestPacket = struct {
         _ = try stream.readVarInt();
         const command_line = try stream.readVarString();
 
-        const origin_type_raw = try stream.readUint8();
-        const origin_type: CommandOriginType = std.enums.fromInt(CommandOriginType, origin_type_raw) orelse return error.UnknownCommandOriginType;
+        const origin_type_str = try stream.readVarString();
+        const origin_type = CommandOriginType.fromString(origin_type_str);
 
         const uuid_slice = Uuid.read(stream);
         var uuid: [16]u8 = undefined;
@@ -47,5 +106,3 @@ pub const CommandRequestPacket = struct {
         };
     }
 };
-
-const std = @import("std");
