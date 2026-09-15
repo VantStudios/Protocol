@@ -7,7 +7,7 @@ const SkinAnimation = @import("../login/types.zig").SkinAnimation;
 const Uuid = @import("uuid.zig").Uuid;
 
 pub const SerializedSkin = struct {
-    pub fn write(stream: *BinaryStream, skin: *const ClientData, allocator: std.mem.Allocator) !void {
+    pub fn write(stream: *BinaryStream, skin: *const ClientData, allocator: std.mem.Allocator, full_skin_id: []const u8) !void {
         try stream.writeVarString(skin.skin_id);
         try stream.writeVarString(skin.play_fab_id);
 
@@ -25,9 +25,9 @@ pub const SerializedSkin = struct {
         try writeBase64Decoded(stream, skin.skin_geometry_data, allocator);
         try writeBase64Decoded(stream, skin.skin_geometry_data_engine_version, allocator);
 
-        try stream.writeVarString(skin.skin_animation_data);
+        try writeBase64Decoded(stream, skin.skin_animation_data, allocator);
         try stream.writeVarString(skin.cape_id);
-        try stream.writeVarString("");
+        try stream.writeVarString(full_skin_id);
 
         try stream.writeUint8(if (std.ascii.eqlIgnoreCase(skin.arm_size, "slim")) 0 else 1);
         try stream.writeInt32(@bitCast(parseHexColor(skin.skin_color)), .Little);
@@ -47,7 +47,7 @@ pub const SerializedSkin = struct {
 
         try stream.writeVarInt(@intCast(skin.piece_tint_colors.len));
         for (skin.piece_tint_colors) |tint| {
-            try stream.writeVarString(tint.piece_type);
+            try stream.writeVarString(pieceTypeWireName(tint.piece_type));
             for (tint.colors) |colour| {
                 try stream.writeInt32(@bitCast(parseHexColor(colour)), .Little);
             }
@@ -103,22 +103,16 @@ pub const SerializedSkin = struct {
         if (data.len == 0) {
             return try allocator.alloc(u8, 0);
         }
-        if (std.base64.standard.Decoder.calcSizeForSlice(data)) |decoded_len| {
-            const decoded = try allocator.alloc(u8, decoded_len);
-            if (std.base64.standard.Decoder.decode(decoded, data)) |_| {
-                return decoded;
-            } else |_| {
-                allocator.free(decoded);
-            }
-        } else |_| {}
-        if (std.base64.standard_no_pad.Decoder.calcSizeForSlice(data)) |decoded_len| {
-            const decoded = try allocator.alloc(u8, decoded_len);
-            if (std.base64.standard_no_pad.Decoder.decode(decoded, data)) |_| {
-                return decoded;
-            } else |_| {
-                allocator.free(decoded);
-            }
-        } else |_| {}
+        inline for (.{ std.base64.standard, std.base64.standard_no_pad, std.base64.url_safe, std.base64.url_safe_no_pad }) |decoder| {
+            if (decoder.Decoder.calcSizeForSlice(data)) |decoded_len| {
+                const decoded = try allocator.alloc(u8, decoded_len);
+                if (decoder.Decoder.decode(decoded, data)) |_| {
+                    return decoded;
+                } else |_| {
+                    allocator.free(decoded);
+                }
+            } else |_| {}
+        }
         std.log.warn("[SKIN-B64] fallback to raw, len={d}", .{data.len});
         return try allocator.dupe(u8, data);
     }
@@ -179,19 +173,30 @@ const persona_piece_types = [_]PersonaPieceTypeEntry{
     .{ .name = "unsupported", .ordinal = 28 },
 };
 
-fn pieceTypeOrdinal(name: []const u8) u32 {
+const persona_aliases = [_]struct { login: []const u8, wire: []const u8 }{
+    .{ .login = "hand", .wire = "hands" },
+    .{ .login = "facial_hair", .wire = "facialhair" },
+    .{ .login = "face_accessory", .wire = "faceaccessory" },
+    .{ .login = "left_leg", .wire = "leftleg" },
+    .{ .login = "right_leg", .wire = "rightleg" },
+    .{ .login = "classic_skin", .wire = "classicskin" },
+};
+
+fn pieceTypeWireName(name: []const u8) []const u8 {
     var short: []const u8 = name;
     if (std.mem.startsWith(u8, name, "persona_")) {
         short = name["persona_".len..];
     }
-    // Login data uses the singular "hand" where the wire name is plural.
-    if (std.mem.eql(u8, short, "hand")) {
-        short = "hands";
+    inline for (persona_aliases) |alias| {
+        if (std.mem.eql(u8, short, alias.login)) return alias.wire;
     }
+    return short;
+}
+
+fn pieceTypeOrdinal(name: []const u8) u32 {
+    const wire_name = pieceTypeWireName(name);
     for (persona_piece_types) |entry| {
-        if (std.mem.eql(u8, short, entry.name)) {
-            return entry.ordinal;
-        }
+        if (std.mem.eql(u8, wire_name, entry.name)) return entry.ordinal;
     }
     return 0;
 }
@@ -208,4 +213,12 @@ test "pieceTypeOrdinal maps login names to wire ordinals" {
     try std.testing.expectEqual(@as(u32, 13), pieceTypeOrdinal("eyes"));
     try std.testing.expectEqual(@as(u32, 9), pieceTypeOrdinal("persona_hand"));
     try std.testing.expectEqual(@as(u32, 28), pieceTypeOrdinal("unsupported"));
+}
+
+test "pieceTypeWireName maps login names to wire names" {
+    try std.testing.expectEqualStrings("hands", pieceTypeWireName("persona_hand"));
+    try std.testing.expectEqualStrings("facialhair", pieceTypeWireName("persona_facial_hair"));
+    try std.testing.expectEqualStrings("faceaccessory", pieceTypeWireName("persona_face_accessory"));
+    try std.testing.expectEqualStrings("high_pants", pieceTypeWireName("persona_high_pants"));
+    try std.testing.expectEqualStrings("eyes", pieceTypeWireName("persona_eyes"));
 }

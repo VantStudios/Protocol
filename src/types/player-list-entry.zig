@@ -36,7 +36,7 @@ pub const PlayerListEntry = struct {
         try stream.writeVarString(entry.platform_online_id);
         try stream.writeInt32(entry.build_platform, .Little);
         if (entry.skin) |skin| {
-            try SerializedSkin.write(stream, skin, allocator);
+            try SerializedSkin.write(stream, skin, allocator, entry.uuid);
         }
         try stream.writeBool(entry.teacher);
         try stream.writeBool(entry.host);

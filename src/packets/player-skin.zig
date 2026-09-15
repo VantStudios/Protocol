@@ -12,7 +12,7 @@ pub const PlayerSkinPacket = struct {
     pub fn serialize(self: *const PlayerSkinPacket, stream: *BinaryStream, allocator: std.mem.Allocator) ![]const u8 {
         try stream.writeVarInt(Packet.PlayerSkin);
         try Uuid.write(stream, self.uuid);
-        try SerializedSkin.write(stream, self.skin, allocator);
+        try SerializedSkin.write(stream, self.skin, allocator, self.uuid);
         try stream.writeVarString("");
         try stream.writeVarString("");
         return stream.getBuffer();

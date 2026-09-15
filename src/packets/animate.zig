@@ -4,9 +4,9 @@ const Packet = @import("../root.zig").Packet;
 
 pub const AnimateAction = enum(u8) {
     SwingArm = 1,
-    StopSleep = 2,
-    CriticalHit = 3,
-    MagicCriticalHit = 4,
+    StopSleep = 3,
+    CriticalHit = 4,
+    MagicCriticalHit = 5,
     _,
 };
 
@@ -21,6 +21,28 @@ pub const SwingSource = enum(u8) {
     DropItem = 7,
     Event = 8,
     _,
+
+    pub fn wireName(self: SwingSource) []const u8 {
+        return switch (self) {
+            .None => "none",
+            .Build => "build",
+            .Mine => "mine",
+            .Interact => "interact",
+            .Attack => "attack",
+            .UseItem => "useitem",
+            .ThrowItem => "throwitem",
+            .DropItem => "dropitem",
+            .Event => "event",
+            else => "none",
+        };
+    }
+
+    pub fn fromWireName(name: []const u8) ?SwingSource {
+        inline for (std.enums.values(SwingSource)) |source| {
+            if (std.mem.eql(u8, name, source.wireName())) return source;
+        }
+        return null;
+    }
 };
 
 pub const AnimatePacket = struct {
@@ -36,7 +58,7 @@ pub const AnimatePacket = struct {
         try stream.writeFloat32(self.data, .Little);
         if (self.swing_source) |source| {
             try stream.writeBool(true);
-            try stream.writeUint8(@intFromEnum(source));
+            try stream.writeVarString(source.wireName());
         } else {
             try stream.writeBool(false);
         }
@@ -51,8 +73,7 @@ pub const AnimatePacket = struct {
         const data = try stream.readFloat32(.Little);
         var swing_source: ?SwingSource = null;
         if (try stream.readBool()) {
-            const swing_source_raw = try stream.readUint8();
-            swing_source = std.enums.fromInt(SwingSource, swing_source_raw) orelse .None;
+            swing_source = SwingSource.fromWireName(try stream.readVarString());
         }
         return AnimatePacket{
             .action = action,
