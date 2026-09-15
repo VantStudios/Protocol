@@ -33,15 +33,44 @@ pub const IdentityData = struct {
     identity: []const u8,
     title_id: []const u8,
 
+    fn uuidFromXuid(allocator: std.mem.Allocator, xuid: []const u8) ![]const u8 {
+        var md5 = std.crypto.hash.Md5.init(.{});
+        md5.update("pocket-auth-1-xuid:");
+        md5.update(xuid);
+        var digest: [16]u8 = undefined;
+        md5.final(&digest);
+        digest[6] = (digest[6] & 0x0f) | 0x30;
+        digest[8] = (digest[8] & 0x3f) | 0x80;
+
+        const hex = "0123456789abcdef";
+        var out: [36]u8 = undefined;
+        var out_idx: usize = 0;
+        for (digest, 0..) |byte, i| {
+            if (i == 4 or i == 6 or i == 8 or i == 10) {
+                out[out_idx] = '-';
+                out_idx += 1;
+            }
+            out[out_idx] = hex[byte >> 4];
+            out[out_idx + 1] = hex[byte & 0x0f];
+            out_idx += 2;
+        }
+        return allocator.dupe(u8, &out);
+    }
+
     pub fn parse(allocator: std.mem.Allocator, json_value: std.json.Value) !IdentityData {
         const xuid = try dupRequiredString(allocator, json_value.object, "xid");
         errdefer if (xuid.len > 0) allocator.free(xuid);
 
-        const identity = try dupRequiredString(allocator, json_value.object, "xname");
-        errdefer if (identity.len > 0) allocator.free(identity);
-
         const display_name = try dupRequiredString(allocator, json_value.object, "xname");
         errdefer if (display_name.len > 0) allocator.free(display_name);
+
+        const identity = if (json_value.object.get("leguuid")) |leguuid_value| blk: {
+            if (leguuid_value == .string and leguuid_value.string.len == 36) {
+                break :blk try allocator.dupe(u8, leguuid_value.string);
+            }
+            break :blk try uuidFromXuid(allocator, xuid);
+        } else try uuidFromXuid(allocator, xuid);
+        errdefer if (identity.len > 0) allocator.free(identity);
 
         const title_id = try dupRequiredString(allocator, json_value.object, "tid");
         errdefer if (title_id.len > 0) allocator.free(title_id);
