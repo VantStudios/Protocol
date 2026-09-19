@@ -3,7 +3,6 @@ const std = @import("std");
 const BinaryStream = @import("BinaryStream").BinaryStream;
 
 const Packet = @import("../enums/packet.zig").Packet;
-const Vector3i = @import("../types/block-position.zig").BlockPosition;
 const Uuid = @import("../types/uuid.zig").Uuid;
 
 pub const DimensionDefinition = struct {
@@ -13,6 +12,7 @@ pub const DimensionDefinition = struct {
     generator_type: i32,
     dimension_type: i32,
     pack_id: []const u8,
+    default_biome: []const u8 = "",
 };
 
 pub const DimensionDataPacket = struct {
@@ -23,11 +23,12 @@ pub const DimensionDataPacket = struct {
         try stream.writeVarInt(@intCast(self.definitions.len));
         for (self.definitions) |def| {
             try stream.writeVarString(def.id);
-            try stream.writeZigZag(def.max_height);
             try stream.writeZigZag(def.min_height);
+            try stream.writeZigZag(def.max_height - def.min_height);
             try stream.writeZigZag(def.generator_type);
             try stream.writeZigZag(def.dimension_type);
             try Uuid.write(stream, def.pack_id);
+            try stream.writeVarString(def.default_biome);
         }
         return stream.getBuffer();
     }
@@ -38,11 +39,12 @@ pub const DimensionDataPacket = struct {
         const definitions = try allocator.alloc(DimensionDefinition, @intCast(count));
         for (0..@intCast(count)) |i| {
             const id = try stream.readVarString();
-            const max_height = try stream.readZigZag();
             const min_height = try stream.readZigZag();
+            const max_height = min_height + try stream.readZigZag();
             const generator_type = try stream.readZigZag();
             const dimension_type = try stream.readZigZag();
             const pack_id = Uuid.read(stream);
+            const default_biome = try stream.readVarString();
             definitions[i] = .{
                 .id = id,
                 .max_height = max_height,
@@ -50,6 +52,7 @@ pub const DimensionDataPacket = struct {
                 .generator_type = generator_type,
                 .dimension_type = dimension_type,
                 .pack_id = pack_id,
+                .default_biome = default_biome,
             };
         }
         return .{ .definitions = definitions };
@@ -58,6 +61,7 @@ pub const DimensionDataPacket = struct {
     pub fn deinit(self: *const DimensionDataPacket, allocator: std.mem.Allocator) void {
         for (self.definitions) |*def| {
             allocator.free(@constCast(def.id));
+            allocator.free(@constCast(def.default_biome));
         }
         allocator.free(@constCast(self.definitions));
     }

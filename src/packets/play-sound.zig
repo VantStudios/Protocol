@@ -8,7 +8,9 @@ pub const PlaySoundPacket = struct {
     volume: f32,
     pitch: f32,
     loop_count: i32 = 0,
+    bypass_listener_range_check: bool = false,
     server_sound_handle: ?i64 = null,
+    playback_position_seconds: ?f32 = null,
 
     pub fn serialize(self: *const PlaySoundPacket, stream: *BinaryStream) ![]const u8 {
         try stream.writeVarInt(Packet.PlaySound);
@@ -20,10 +22,17 @@ pub const PlaySoundPacket = struct {
         try stream.writeFloat32(self.volume, .Little);
         try stream.writeFloat32(self.pitch, .Little);
 
-        try stream.writeZigZag(self.loop_count);
+        try stream.writeVarInt(@bitCast(self.loop_count));
+        try stream.writeBool(self.bypass_listener_range_check);
         if (self.server_sound_handle) |handle| {
             try stream.writeBool(true);
             try stream.writeInt64(handle, .Little);
+        } else {
+            try stream.writeBool(false);
+        }
+        if (self.playback_position_seconds) |seconds| {
+            try stream.writeBool(true);
+            try stream.writeFloat32(seconds, .Little);
         } else {
             try stream.writeBool(false);
         }
@@ -38,10 +47,15 @@ pub const PlaySoundPacket = struct {
         const bz = @as(f32, @floatFromInt(try stream.readZigZag())) / 8.0;
         const volume = try stream.readFloat32(.Little);
         const pitch = try stream.readFloat32(.Little);
-        const loop_count = try stream.readZigZag();
+        const loop_count: i32 = @bitCast(try stream.readVarInt());
+        const bypass_listener_range_check = try stream.readBool();
         var server_sound_handle: ?i64 = null;
         if (try stream.readBool()) {
             server_sound_handle = try stream.readInt64(.Little);
+        }
+        var playback_position_seconds: ?f32 = null;
+        if (try stream.readBool()) {
+            playback_position_seconds = try stream.readFloat32(.Little);
         }
         return .{
             .name = name,
@@ -49,7 +63,9 @@ pub const PlaySoundPacket = struct {
             .volume = volume,
             .pitch = pitch,
             .loop_count = loop_count,
+            .bypass_listener_range_check = bypass_listener_range_check,
             .server_sound_handle = server_sound_handle,
+            .playback_position_seconds = playback_position_seconds,
         };
     }
 };

@@ -13,7 +13,6 @@ pub const StackResponseSlotInfo = struct {
         try stream.writeUint8(value.slot);
         try stream.writeUint8(value.hotbar_slot);
         try stream.writeUint8(value.count);
-        try stream.writeBool(true);
         try stream.writeBool(value.stack_network_id > 0);
         if (value.stack_network_id > 0) {
             try stream.writeZigZag(value.stack_network_id);
@@ -32,9 +31,7 @@ pub const StackResponseSlotInfo = struct {
         const count = try stream.readUint8();
         var stack_network_id: i32 = 0;
         if (try stream.readBool()) {
-            if (try stream.readBool()) {
-                stack_network_id = try stream.readZigZag();
-            }
+            stack_network_id = try stream.readZigZag();
         }
         const custom_name = try stream.readVarString();
         var filtered_custom_name: ?[]const u8 = null;

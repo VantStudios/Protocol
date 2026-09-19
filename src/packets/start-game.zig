@@ -84,7 +84,7 @@ pub const StartGamePacket = struct {
     server_authoritative_block_breaking: bool,
     current_tick: u64,
     enchantment_seed: i32,
-    block_type_definitions: []NetworkBlockTypeDefinition,
+    block_type_definitions: []const NetworkBlockTypeDefinition,
     multiplayer_correlation_id: []const u8,
     server_authoritative_inventory: bool,
     engine: []const u8,
@@ -379,7 +379,7 @@ pub const StartGamePacket = struct {
         }
         allocator.free(self.experiments);
 
-        for (self.block_type_definitions) |*definition| {
+        for (self.block_type_definitions) |definition| {
             definition.deinit(allocator);
         }
         allocator.free(self.block_type_definitions);

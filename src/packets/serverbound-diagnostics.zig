@@ -9,12 +9,20 @@ pub const EntityDiagnosticTimingInfo = struct {
     entity: []const u8 = "",
     time_in_ns: i64 = 0,
     percent_of_total: u8 = 0,
+    position_x: f32 = 0,
+    position_y: f32 = 0,
+    position_z: f32 = 0,
+    dimension: []const u8 = "",
 
     pub fn write(stream: *BinaryStream, value: EntityDiagnosticTimingInfo) !void {
         try stream.writeVarString(value.display_name);
         try stream.writeVarString(value.entity);
         try stream.writeInt64(value.time_in_ns, .Little);
         try stream.writeUint8(value.percent_of_total);
+        try stream.writeFloat32(value.position_x, .Little);
+        try stream.writeFloat32(value.position_y, .Little);
+        try stream.writeFloat32(value.position_z, .Little);
+        try stream.writeVarString(value.dimension);
     }
 };
 
@@ -157,6 +165,10 @@ pub const ServerboundDiagnosticsPacket = struct {
                 .entity = try stream.readVarString(),
                 .time_in_ns = try stream.readInt64(.Little),
                 .percent_of_total = try stream.readUint8(),
+                .position_x = try stream.readFloat32(.Little),
+                .position_y = try stream.readFloat32(.Little),
+                .position_z = try stream.readFloat32(.Little),
+                .dimension = try stream.readVarString(),
             };
         }
         packet.entity_diagnostics = entity_diagnostics;

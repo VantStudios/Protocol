@@ -25,6 +25,7 @@ pub const UseItemTransactionData = struct {
     block_position: BlockPosition,
     block_face: i32,
     hot_bar_slot: i32,
+    hand: u8,
     position: Vector3f,
     clicked_position: Vector3f,
     block_runtime_id: u32,

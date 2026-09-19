@@ -31,8 +31,6 @@ pub const PlayerAuthInputData = struct {
     }
 
     pub fn read(stream: *BinaryStream) !PlayerAuthInputData {
-        if (!try stream.readBool()) return error.InvalidDummyOptional;
-
         var flags: u128 = 0;
         const count = try stream.readVarInt();
         for (0..count) |_| {
@@ -48,8 +46,6 @@ pub const PlayerAuthInputData = struct {
     }
 
     pub fn write(stream: *BinaryStream, value: PlayerAuthInputData) !void {
-        try stream.writeBool(true);
-
         var ordinals: [MAX_INPUT_DATA_FLAGS]u8 = undefined;
         var count: u32 = 0;
         var bits = value.flags;

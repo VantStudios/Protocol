@@ -3,6 +3,7 @@ const std = @import("std");
 pub const NBT = @import("nbt");
 
 pub const BiomeDefinitionsLoader = @import("./data/biome-definitions.zig");
+pub const PreSpawnData = @import("./data/pre-spawn-data.zig");
 pub const Data = @import("./data/root.zig");
 pub const AbilityIndex = @import("./enums/ability-index.zig").AbilityIndex;
 pub const AbilityLayerType = @import("./enums/ability-layer-type.zig").AbilityLayerType;
@@ -155,6 +156,7 @@ pub const UpdateAttributesPacket = @import("./packets/update-attributes.zig").Up
 pub const UpdateBlockPacket = @import("./packets/update-block.zig").UpdateBlockPacket;
 pub const UpdateTradePacket = @import("./packets/update-trade.zig").UpdateTradePacket;
 pub const VoxelShapesPacket = @import("./packets/voxel-shapes.zig").VoxelShapesPacket;
+pub const JigsawStructureDataPacket = @import("./packets/jigsaw-structure-data.zig").JigsawStructureDataPacket;
 pub const VoxelShapeNameEntry = @import("./packets/voxel-shapes.zig").VoxelShapeNameEntry;
 pub const AbilityLayer = @import("./types/ability-layer.zig").AbilityLayer;
 pub const AbilitySet = @import("./types/ability-set.zig").AbilitySet;
@@ -198,9 +200,9 @@ pub const Uuid = @import("./types/uuid.zig").Uuid;
 pub const Vector2f = @import("./types/vector2f.zig").Vector2f;
 pub const Vector3f = @import("./types/vector3f.zig").Vector3f;
 
-pub const PROTOCOL = 2169;
-pub const COMPATIBLE_PROTOCOLS = [_]i32{ 2168, 2169 };
-pub const MINECRAFT_VERSION = "1.26.45";
+pub const PROTOCOL = 2193;
+pub const COMPATIBLE_PROTOCOLS = [_]i32{ 2168, 2169, 2193 };
+pub const MINECRAFT_VERSION = "1.26.50";
 pub const SHIELD_NETWORK_ID = 387;
 
 test {

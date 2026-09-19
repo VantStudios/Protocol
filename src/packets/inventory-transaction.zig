@@ -39,11 +39,9 @@ pub const InventoryTransactionPacket = struct {
             }
         }
 
-        if (!try stream.readBool()) return error.InvalidPacket;
         const transaction_type_raw = try stream.readVarInt();
         const transaction_type: TransactionType = std.enums.fromInt(TransactionType, transaction_type_raw) orelse return error.InvalidTransactionType;
 
-        if (!try stream.readBool()) return error.InvalidPacket;
         const action_count: u32 = @intCast(try stream.readVarInt());
 
         var normal_data = NormalTransactionData{};
@@ -57,14 +55,10 @@ pub const InventoryTransactionPacket = struct {
 
                 var container_id: ?u8 = null;
                 if (try stream.readBool()) {
-                    if (try stream.readBool()) {
-                        container_id = try stream.readUint8(); // window id
-                    }
+                    container_id = try stream.readUint8();
                 }
                 if (try stream.readBool()) {
-                    if (try stream.readBool()) {
-                        _ = try stream.readVarInt(); // world flag
-                    }
+                    _ = try stream.readVarInt();
                 }
 
                 const slot = try stream.readVarInt();
@@ -146,6 +140,7 @@ fn readUseItem(stream: *BinaryStream) !UseItemTransactionData {
     const block_position = try BlockPosition.read(stream);
     const block_face = try stream.readUint8();
     const hot_bar_slot = try stream.readZigZag();
+    const hand = try stream.readUint8();
     try NetworkItemStackDescriptor.skipShort(stream);
     const position = try Vector3f.read(stream);
     const clicked_position = try Vector3f.read(stream);
@@ -159,6 +154,7 @@ fn readUseItem(stream: *BinaryStream) !UseItemTransactionData {
         .block_position = block_position,
         .block_face = block_face,
         .hot_bar_slot = hot_bar_slot,
+        .hand = hand,
         .position = position,
         .clicked_position = clicked_position,
         .block_runtime_id = block_runtime_id,

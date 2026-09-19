@@ -12,8 +12,6 @@ pub const ItemStackResponse = struct {
         try stream.writeUint8(@intFromEnum(value.status));
         try stream.writeZigZag(value.request_id);
 
-        try stream.writeBool(true);
-
         if (value.container_info.len > 0) {
             try stream.writeBool(true);
             try stream.writeVarInt(@intCast(value.container_info.len));

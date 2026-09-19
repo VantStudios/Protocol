@@ -13,6 +13,7 @@ pub const ItemUseTransaction = struct {
     block_position: BlockPosition,
     block_face: i32,
     hot_bar_slot: i32,
+    hand: u8 = 0,
     item_in_hand: NetworkItemStackDescriptor,
     position: Vector3f,
     clicked_position: Vector3f,
@@ -36,18 +37,18 @@ pub const ItemUseTransaction = struct {
             }
         }
 
-        if ((try stream.readBool()) and (try stream.readBool())) {
+        if (try stream.readBool()) {
             const action_count = try stream.readVarInt();
             for (0..action_count) |_| {
                 try skipInventoryAction(stream);
             }
         }
-
         const action_type = try stream.readZigZag();
         const trigger_type = try stream.readUint8();
         const block_position = try BlockPosition.read(stream);
         const block_face = try stream.readUint8();
         const hot_bar_slot = try stream.readZigZag();
+        const hand = try stream.readUint8();
         const item_in_hand = try NetworkItemStackDescriptor.readShort(stream, allocator);
         const position = try Vector3f.read(stream);
         const clicked_position = try Vector3f.read(stream);
@@ -62,6 +63,7 @@ pub const ItemUseTransaction = struct {
             .block_position = block_position,
             .block_face = block_face,
             .hot_bar_slot = hot_bar_slot,
+            .hand = hand,
             .item_in_hand = item_in_hand,
             .position = position,
             .clicked_position = clicked_position,
@@ -84,7 +86,6 @@ pub const ItemUseTransaction = struct {
         }
 
         try stream.writeBool(true);
-        try stream.writeBool(true);
         try stream.writeVarInt(0);
 
         try stream.writeZigZag(self.action_type);
@@ -92,6 +93,7 @@ pub const ItemUseTransaction = struct {
         try BlockPosition.write(stream, self.block_position);
         try stream.writeUint8(@intCast(self.block_face & 0xFF));
         try stream.writeZigZag(self.hot_bar_slot);
+        try stream.writeUint8(self.hand);
         try NetworkItemStackDescriptor.writeShort(stream, self.item_in_hand, allocator);
         try Vector3f.write(stream, self.position);
         try Vector3f.write(stream, self.clicked_position);
@@ -108,14 +110,10 @@ pub const ItemUseTransaction = struct {
 fn skipInventoryAction(stream: *BinaryStream) !void {
     _ = try stream.readVarInt();
     if (try stream.readBool()) {
-        if (try stream.readBool()) {
-            _ = try stream.readUint8();
-        }
+        _ = try stream.readUint8();
     }
     if (try stream.readBool()) {
-        if (try stream.readBool()) {
-            _ = try stream.readVarInt();
-        }
+        _ = try stream.readVarInt();
     }
     _ = try stream.readVarInt();
     try NetworkItemStackDescriptor.skipShort(stream);

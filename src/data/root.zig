@@ -15,5 +15,8 @@ pub const creative_groups_json = @embedFile("json/creative_groups.json");
 pub const shaped_json = @embedFile("json/shaped.json");
 pub const shapeless_json = @embedFile("json/shapeless.json");
 pub const tool_types_json = @embedFile("json/tool_types.json");
+pub const jigsaw_structures_data_nbt = @embedFile("json/jigsaw_structures_data.nbt");
+pub const data_driven_blocks_nbt = @embedFile("json/data_driven_blocks.nbt");
+pub const voxel_shapes_json = @embedFile("json/voxel_shapes.json");
 
 pub const BlockPermutationLoader = @import("loaders/block-permutation-loader.zig").BlockPermutationLoader;

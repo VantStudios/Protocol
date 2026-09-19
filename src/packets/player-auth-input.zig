@@ -69,7 +69,7 @@ pub const PlayerAuthInputPacket = struct {
         errdefer {
             if (item_transaction) |*tx| tx.deinit(allocator);
         }
-        if (try readDoubleOptionalPresent(stream)) {
+        if (try stream.readBool()) {
             item_transaction = try ItemUseTransaction.read(stream, allocator);
         }
 
@@ -77,13 +77,13 @@ pub const PlayerAuthInputPacket = struct {
         errdefer {
             if (item_stack_request) |*item| item.deinit(allocator);
         }
-        if (try readDoubleOptionalPresent(stream)) {
+        if (try stream.readBool()) {
             item_stack_request = try ItemStackRequest.read(stream, allocator);
         }
 
         var block_actions: [MAX_BLOCK_ACTIONS]PlayerBlockAction = undefined;
         var block_action_count: u32 = 0;
-        if (try readDoubleOptionalPresent(stream)) {
+        if (try stream.readBool()) {
             const count: u32 = try stream.readVarInt();
             const read_count = @min(count, MAX_BLOCK_ACTIONS);
             for (0..read_count) |i| {
@@ -97,17 +97,11 @@ pub const PlayerAuthInputPacket = struct {
 
         var vehicle_rotation = Vector2f.zero();
         var client_predicted_vehicle: i64 = 0;
-        const has_vehicle_rotation = try readDoubleOptionalPresent(stream);
-        if (has_vehicle_rotation) {
+        if (try stream.readBool()) {
             vehicle_rotation = try Vector2f.read(stream);
         }
-        const has_client_predicted_vehicle = try readDoubleOptionalPresent(stream);
-        if (has_client_predicted_vehicle) {
+        if (try stream.readBool()) {
             client_predicted_vehicle = try stream.readZigZong();
-        }
-
-        if (has_vehicle_rotation != has_client_predicted_vehicle) {
-            return error.InvalidVehicleInfo;
         }
 
         const analogue_motion = try Vector2f.read(stream);
@@ -161,7 +155,6 @@ pub const PlayerAuthInputPacket = struct {
         try stream.writeVarLong(self.input_tick);
         try Vector3f.write(stream, self.position_delta);
 
-        try stream.writeBool(true);
         if (self.item_transaction) |tx| {
             try stream.writeBool(true);
             try ItemUseTransaction.write(tx, stream, stream.allocator);
@@ -169,7 +162,6 @@ pub const PlayerAuthInputPacket = struct {
             try stream.writeBool(false);
         }
 
-        try stream.writeBool(true);
         if (self.item_stack_request) |req| {
             try stream.writeBool(true);
             try ItemStackRequest.write(stream, req);
@@ -177,7 +169,6 @@ pub const PlayerAuthInputPacket = struct {
             try stream.writeBool(false);
         }
 
-        try stream.writeBool(true);
         if (self.block_action_count > 0) {
             try stream.writeBool(true);
             try stream.writeVarInt(self.block_action_count);
@@ -189,12 +180,10 @@ pub const PlayerAuthInputPacket = struct {
         }
 
         const in_vehicle = self.client_predicted_vehicle != 0;
-        try stream.writeBool(true);
         try stream.writeBool(in_vehicle);
         if (in_vehicle) {
             try Vector2f.write(stream, self.vehicle_rotation);
         }
-        try stream.writeBool(true);
         try stream.writeBool(in_vehicle);
         if (in_vehicle) {
             try stream.writeZigZong(self.client_predicted_vehicle);
@@ -209,11 +198,6 @@ pub const PlayerAuthInputPacket = struct {
 
     pub fn getBlockActions(self: *const PlayerAuthInputPacket) []const PlayerBlockAction {
         return self.block_actions[0..self.block_action_count];
-    }
-
-    fn readDoubleOptionalPresent(stream: *BinaryStream) !bool {
-        if (!try stream.readBool()) return error.InvalidDummyOptional;
-        return try stream.readBool();
     }
 
     pub fn deinit(self: *PlayerAuthInputPacket, allocator: std.mem.Allocator) void {
@@ -272,7 +256,6 @@ fn writeTestWire(w: *BinaryStream, vehicle_actor_present: bool) !void {
     try Vector3f.write(w, Vector3f.init(100.0, 64.0, -200.0));
     try Vector2f.write(w, Vector2f.init(0.5, -0.25));
     try w.writeFloat32(-2.0, .Little);
-    try w.writeBool(true); // dummy optional around the input flag list
     try w.writeVarInt(4); // SneakDown(9), Up(10), PerformBlockActions(35), IsInClientPredictedVehicle(45)
     try w.writeZigZag(9);
     try w.writeZigZag(10);
@@ -284,12 +267,9 @@ fn writeTestWire(w: *BinaryStream, vehicle_actor_present: bool) !void {
     try Vector2f.write(w, Vector2f.init(30.0, 40.0));
     try w.writeVarLong(77);
     try Vector3f.write(w, Vector3f.init(0.5, -0.5, 1.5));
-    try w.writeBool(true); // item interaction dummy
-    try w.writeBool(false); // absent
-    try w.writeBool(true); // item stack request dummy
-    try w.writeBool(false); // absent
-    try w.writeBool(true); // block actions dummy
-    try w.writeBool(true); // present
+    try w.writeBool(false); // item interaction absent
+    try w.writeBool(false); // item stack request absent
+    try w.writeBool(true); // block actions present
     try w.writeVarInt(2);
     try PlayerBlockAction.write(w, .{
         .action = .StartBreak,
@@ -301,10 +281,8 @@ fn writeTestWire(w: *BinaryStream, vehicle_actor_present: bool) !void {
         .block_pos = BlockPosition.init(-5, 63, 7),
         .face = 0,
     });
-    try w.writeBool(true); // vehicle rotation dummy
-    try w.writeBool(true); // present
-    try Vector2f.write(w, Vector2f.init(12.0, 24.0));
-    try w.writeBool(true); // predicted vehicle dummy
+    try w.writeBool(vehicle_actor_present);
+    if (vehicle_actor_present) try Vector2f.write(w, Vector2f.init(12.0, 24.0));
     try w.writeBool(vehicle_actor_present);
     if (vehicle_actor_present) try w.writeZigZong(12345);
     try Vector2f.write(w, Vector2f.init(0.25, 0.75));
@@ -360,16 +338,17 @@ test "player auth input roundtrips every field" {
     try testing.expect(parsed.item_stack_request == null);
 }
 
-test "player auth input vehicle rotation and actor id must agree" {
+test "player auth input vehicle info is optional per field" {
     var wire = BinaryStream.init(testing.allocator, null, null);
     defer wire.deinit();
     try writeTestWire(&wire, false);
 
     var in = BinaryStream.init(testing.allocator, wire.getBuffer(), 0);
-    try testing.expectError(
-        error.InvalidVehicleInfo,
-        PlayerAuthInputPacket.deserialize(&in, testing.allocator),
-    );
+    var parsed = try PlayerAuthInputPacket.deserialize(&in, testing.allocator);
+    defer parsed.deinit(testing.allocator);
+
+    try testing.expectEqual(@as(i64, 0), parsed.client_predicted_vehicle);
+    try testing.expectEqual(Vector2f.zero(), parsed.vehicle_rotation);
 }
 
 test "player auth input rejects unknown input mode" {
