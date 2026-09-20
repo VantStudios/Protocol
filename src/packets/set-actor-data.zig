@@ -9,6 +9,7 @@ pub const SetActorDataPacket = struct {
     properties: PropertySyncData,
     tick: u64,
     allocator: std.mem.Allocator,
+    owns_data: bool,
 
     pub fn init(allocator: std.mem.Allocator, runtime_entity_id: i64, tick: u64, data: []DataItem) SetActorDataPacket {
         return .{
@@ -17,15 +18,29 @@ pub const SetActorDataPacket = struct {
             .properties = PropertySyncData.init(allocator),
             .tick = tick,
             .allocator = allocator,
+            .owns_data = true,
+        };
+    }
+
+    pub fn initBorrowed(allocator: std.mem.Allocator, runtime_entity_id: i64, tick: u64, data: []DataItem) SetActorDataPacket {
+        return .{
+            .runtime_entity_id = runtime_entity_id,
+            .data = data,
+            .properties = PropertySyncData.init(allocator),
+            .tick = tick,
+            .allocator = allocator,
+            .owns_data = false,
         };
     }
 
     pub fn deinit(self: *SetActorDataPacket) void {
-        for (self.data) |*item| {
-            var mutable_item = item.*;
-            mutable_item.deinit(self.allocator);
+        if (self.owns_data) {
+            for (self.data) |*item| {
+                var mutable_item = item.*;
+                mutable_item.deinit(self.allocator);
+            }
+            self.allocator.free(self.data);
         }
-        self.allocator.free(self.data);
         self.properties.deinit();
     }
 
@@ -68,6 +83,7 @@ pub const SetActorDataPacket = struct {
             .properties = properties,
             .tick = tick,
             .allocator = allocator,
+            .owns_data = true,
         };
     }
 };
