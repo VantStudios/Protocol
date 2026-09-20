@@ -11,7 +11,7 @@ pub const SerializedSkin = struct {
         try stream.writeVarString(skin.skin_id);
         try stream.writeVarString(skin.play_fab_id);
 
-        try writeBase64Decoded(stream, skin.skin_resource_patch, allocator);
+        try writeResourcePatch(stream, skin.skin_resource_patch, allocator);
 
         try writeSkinImage(stream, skin.skin_image_width, skin.skin_image_height, skin.skin_data, allocator);
 
@@ -22,7 +22,7 @@ pub const SerializedSkin = struct {
 
         try writeSkinImage(stream, skin.cape_image_width, skin.cape_image_height, skin.cape_data, allocator);
 
-        try writeBase64Decoded(stream, skin.skin_geometry_data, allocator);
+        try writeGeometryData(stream, skin.skin_geometry_data, allocator);
         try writeBase64Decoded(stream, skin.skin_geometry_data_engine_version, allocator);
 
         try writeBase64Decoded(stream, skin.skin_animation_data, allocator);
@@ -87,6 +87,34 @@ pub const SerializedSkin = struct {
         defer allocator.free(decoded);
         try stream.writeVarInt(@intCast(decoded.len));
         try stream.write(decoded);
+    }
+
+    fn writeResourcePatch(stream: *BinaryStream, data: []const u8, allocator: std.mem.Allocator) !void {
+        if (data.len == 0) {
+            try stream.writeVarString("{\"geometry\":{\"default\":\"geometry.humanoid.custom\"}}");
+            return;
+        }
+        const decoded = try decodeBase64String(allocator, data);
+        defer allocator.free(decoded);
+        if (decoded.len == 0) {
+            try stream.writeVarString("{\"geometry\":{\"default\":\"geometry.humanoid.custom\"}}");
+        } else {
+            try stream.writeVarString(decoded);
+        }
+    }
+
+    fn writeGeometryData(stream: *BinaryStream, data: []const u8, allocator: std.mem.Allocator) !void {
+        if (data.len == 0) {
+            try stream.writeVarString("{}");
+            return;
+        }
+        const decoded = try decodeBase64String(allocator, data);
+        defer allocator.free(decoded);
+        if (decoded.len == 0) {
+            try stream.writeVarString("{}");
+        } else {
+            try stream.writeVarString(decoded);
+        }
     }
 
     fn writeBase64Decoded(stream: *BinaryStream, data: []const u8, allocator: std.mem.Allocator) !void {

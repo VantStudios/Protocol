@@ -137,7 +137,7 @@ pub const StartGamePacket = struct {
         try stream.writeBool(self.experiments_previously_toggled);
         try stream.writeBool(self.bonus_chest);
         try stream.writeBool(self.map_enabled);
-        try stream.writeZigZag(@intFromEnum(self.permission_level));
+        try stream.writeUint8(@intCast(@intFromEnum(self.permission_level)));
         try stream.writeInt32(self.server_chunk_tick_range, .Little);
         try stream.writeBool(self.has_locked_behavior_pack);
         try stream.writeBool(self.has_locked_resource_pack);

@@ -29,7 +29,12 @@ pub fn load(allocator: std.mem.Allocator) !PreSpawnData {
     errdefer arena.deinit();
     const a = arena.allocator();
 
-    const jigsaw_nbt = root.jigsaw_structures_data_nbt;
+    var jigsaw_stream = BinaryStream.init(allocator, root.jigsaw_structures_data_nbt, null);
+    defer jigsaw_stream.deinit();
+    const jigsaw_tag = try NBT.Tag.read(&jigsaw_stream, a, .{ .varint = true });
+    var jigsaw_output = BinaryStream.init(a, null, null);
+    try jigsaw_tag.write(&jigsaw_output, .{ .varint = true });
+    const jigsaw_nbt = jigsaw_output.getBuffer();
 
     var block_palette_list = std.ArrayList(NetworkBlockTypeDefinition){ .items = &.{}, .capacity = 0 };
     var block_palette_nbt_list = std.ArrayList(NBT.Tag){ .items = &.{}, .capacity = 0 };
