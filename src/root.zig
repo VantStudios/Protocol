@@ -169,6 +169,7 @@ pub const CreativeGroup = @import("./types/creative-group.zig").CreativeGroup;
 pub const CreativeItem = @import("./types/creative-item.zig").CreativeItem;
 pub const DataItem = @import("./types/data-item.zig").DataItem;
 pub const Experiments = @import("./types/experiments.zig").Experiments;
+pub const FloatingText = @import("./types/floating-text.zig").FloatingText;
 pub const FullContainerName = @import("./types/full-container-name.zig").FullContainerName;
 pub const GameRules = @import("./types/game-rules.zig");
 pub const InventoryTransactionData = @import("./types/inventory-transaction-data.zig");

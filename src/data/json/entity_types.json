@@ -1736,5 +1736,11 @@
     "components": [
       "minecraft:type_family"
     ]
+  },
+  {
+    "identifier": "minecraft:falling_block",
+    "components": [
+      "minecraft:type_family"
+    ]
   }
 ]
