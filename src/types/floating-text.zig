@@ -98,25 +98,6 @@ pub const FloatingText = struct {
         const serialized = try packet.serialize(&stream);
         return allocator.dupe(u8, serialized);
     }
-
-    pub fn encodeUpdate(
-        allocator: std.mem.Allocator,
-        unique_entity_id: i64,
-        runtime_entity_id: i64,
-        position: Vector3f,
-        name_tag: []const u8,
-        block_runtime_id: i32,
-    ) ![]const u8 {
-        const remove = try encodeRemove(allocator, unique_entity_id);
-        defer allocator.free(remove);
-        const add = try encodeAdd(allocator, unique_entity_id, runtime_entity_id, position, name_tag, block_runtime_id);
-        defer allocator.free(add);
-
-        const buffer = try allocator.alloc(u8, remove.len + add.len);
-        @memcpy(buffer[0..remove.len], remove);
-        @memcpy(buffer[remove.len..], add);
-        return buffer;
-    }
 };
 
 test "decodeEscapes turns literal backslash n into line breaks" {
@@ -178,10 +159,6 @@ test "encodeAdd and encodeRemove write actor packets" {
     const remove = try FloatingText.encodeRemove(allocator, 5);
     defer allocator.free(remove);
     try std.testing.expectEqual(@as(u8, @intCast(Packet.RemoveActor)), remove[0]);
-
-    const update = try FloatingText.encodeUpdate(allocator, 5, 5, Vector3f.init(1, 2, 3), "Hola", 0);
-    defer allocator.free(update);
-    try std.testing.expectEqual(remove.len + add.len, update.len);
-    try std.testing.expectEqual(@as(u8, @intCast(Packet.RemoveActor)), update[0]);
-    try std.testing.expectEqual(@as(u8, @intCast(Packet.AddEntity)), update[remove.len]);
+    try std.testing.expectEqual(@as(usize, 2), remove.len);
+    try std.testing.expect(add.len > remove.len);
 }
