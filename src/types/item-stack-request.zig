@@ -118,11 +118,13 @@ pub const ItemStackRequest = struct {
         const request_id = try stream.readZigZag();
         const action_count = try stream.readVarInt();
         var actions = try allocator.alloc(StackRequestAction, action_count);
+        errdefer allocator.free(actions);
         for (0..action_count) |i| {
             actions[i] = try readAction(stream);
         }
         const filter_count = try stream.readVarInt();
         var filter_strings = try allocator.alloc([]const u8, filter_count);
+        errdefer allocator.free(filter_strings);
         for (0..filter_count) |i| {
             filter_strings[i] = try stream.readVarString();
         }

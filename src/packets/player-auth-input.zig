@@ -249,7 +249,7 @@ fn buildTestPacket() PlayerAuthInputPacket {
     return packet;
 }
 
-fn writeTestWire(w: *BinaryStream, vehicle_actor_present: bool) !void {
+fn writeTestWire(w: *BinaryStream, vehicle_actor_present: bool, stack_request_action_type: ?i32) !void {
     try w.writeVarInt(Packet.PlayerAuthInput);
     try w.writeFloat32(1.5, .Little);
     try w.writeFloat32(10.0, .Little);
@@ -268,7 +268,17 @@ fn writeTestWire(w: *BinaryStream, vehicle_actor_present: bool) !void {
     try w.writeVarLong(77);
     try Vector3f.write(w, Vector3f.init(0.5, -0.5, 1.5));
     try w.writeBool(false); // item interaction absent
-    try w.writeBool(false); // item stack request absent
+    if (stack_request_action_type) |action_type| {
+        try w.writeBool(true);
+        try w.writeZigZag(7); // request id
+        try w.writeVarInt(1); // one action
+        try w.writeVarInt(@intCast(action_type));
+        try w.writeUint8(@intCast(action_type & 0xFF));
+        try w.writeVarInt(0); // no filter strings
+        try w.writeInt32(0, .Little);
+    } else {
+        try w.writeBool(false); // item stack request absent
+    }
     try w.writeBool(true); // block actions present
     try w.writeVarInt(2);
     try PlayerBlockAction.write(w, .{
@@ -293,7 +303,7 @@ fn writeTestWire(w: *BinaryStream, vehicle_actor_present: bool) !void {
 test "player auth input serializes in pmmp wire order" {
     var expected = BinaryStream.init(testing.allocator, null, null);
     defer expected.deinit();
-    try writeTestWire(&expected, true);
+    try writeTestWire(&expected, true, null);
 
     var out = BinaryStream.init(testing.allocator, null, null);
     defer out.deinit();
@@ -341,7 +351,7 @@ test "player auth input roundtrips every field" {
 test "player auth input vehicle info is optional per field" {
     var wire = BinaryStream.init(testing.allocator, null, null);
     defer wire.deinit();
-    try writeTestWire(&wire, false);
+    try writeTestWire(&wire, false, null);
 
     var in = BinaryStream.init(testing.allocator, wire.getBuffer(), 0);
     var parsed = try PlayerAuthInputPacket.deserialize(&in, testing.allocator);
@@ -349,6 +359,32 @@ test "player auth input vehicle info is optional per field" {
 
     try testing.expectEqual(@as(i64, 0), parsed.client_predicted_vehicle);
     try testing.expectEqual(Vector2f.zero(), parsed.vehicle_rotation);
+}
+
+test "an item stack request travels inside the player auth input and is freed with it" {
+    var wire = BinaryStream.init(testing.allocator, null, null);
+    defer wire.deinit();
+    try writeTestWire(&wire, false, 7);
+
+    var in = BinaryStream.init(testing.allocator, wire.getBuffer(), 0);
+    var parsed = try PlayerAuthInputPacket.deserialize(&in, testing.allocator);
+    defer parsed.deinit(testing.allocator);
+
+    const request = parsed.item_stack_request orelse return error.TestUnexpectedResult;
+    try testing.expectEqual(@as(usize, 1), request.actions.len);
+    try testing.expect(request.actions[0] == .lab_table_combine);
+}
+
+test "a stack request that fails mid-read leaves nothing allocated" {
+    var wire = BinaryStream.init(testing.allocator, null, null);
+    defer wire.deinit();
+    try writeTestWire(&wire, false, 999);
+
+    var in = BinaryStream.init(testing.allocator, wire.getBuffer(), 0);
+    try testing.expectError(
+        error.UnknownStackRequestActionType,
+        PlayerAuthInputPacket.deserialize(&in, testing.allocator),
+    );
 }
 
 test "player auth input rejects unknown input mode" {
